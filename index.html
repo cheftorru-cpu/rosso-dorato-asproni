@@ -3,102 +3,74 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rosso Dorato – Gestionale</title>
+<title>Rosso Dorato Asproni</title>
 <style>
-body{font-family:Arial;background:#f6f6f6;padding:15px}
-h1,h2,h3{color:#8b0000}
-.box{background:#fff;padding:15px;border-radius:8px;margin-bottom:15px}
-input{width:100%;padding:8px;margin-top:6px}
-button{width:100%;padding:10px;margin-top:8px;font-size:16px;border:none;border-radius:6px}
-.salva{background:#8b0000;color:#fff}
-.chiudi{background:#000;color:#fff}
-.export{background:#006400;color:#fff}
-.item{background:#eee;padding:6px;margin-top:5px;border-radius:4px}
-.mese{background:#ddd;padding:8px;margin-top:10px;border-radius:6px}
-.giorno{background:#fafafa;padding:6px;margin-top:5px;border-radius:4px}
+body{font-family:Arial;padding:10px;background:#f7f7f7}
+h2{margin-top:30px}
+input,select,button{width:100%;margin:5px 0;padding:8px}
+button{background:#b30000;color:#fff;border:none;border-radius:5px}
+.box{background:#fff;padding:10px;margin-bottom:15px;border-radius:8px}
+.item{border-bottom:1px solid #ddd;padding:5px}
+.small{font-size:12px;color:#555}
 </style>
 </head>
 
 <body>
 
-<h1>Rosso Dorato – Gestionale</h1>
+<h1>🍷 Rosso Dorato Asproni</h1>
 
-📅 Data:
+<div class="box">
+<h2>📅 Giornata</h2>
 <input type="date" id="data">
 
-<div class="box">
-<h3>Incassi</h3>
-<input id="contanti" type="number" placeholder="Contanti">
-<input id="pos" type="number" placeholder="POS">
-<input id="satis" type="number" placeholder="Satispay">
+<input type="number" id="contanti" placeholder="Incassi contanti">
+<input type="number" id="pos" placeholder="Incassi POS">
+<input type="number" id="satis" placeholder="Incassi Satispay">
+
+<input type="number" id="food" placeholder="Spese FOOD">
+<input id="fornFood" placeholder="Fornitore food">
+
+<input type="number" id="nonfood" placeholder="Spese NON food">
+<input id="fornNon" placeholder="Fornitore non food">
+
+<input type="number" id="extra" placeholder="Extra personale">
+
+<button onclick="salva()">💾 Salva giornata</button>
 </div>
 
 <div class="box">
-<h3>Spese</h3>
-<input id="food" type="number" placeholder="Spesa Food">
-<input id="forFood" placeholder="Fornitore Food">
-<input id="nonfood" type="number" placeholder="Spesa Non Food">
-<input id="forNon" placeholder="Fornitore Non Food">
-<input id="personale" type="number" placeholder="Extra personale">
-</div>
-
-<button class="salva" onclick="salva()">💾 Salva giornata</button>
-<button class="chiudi" onclick="chiudiMese()">🟥 Chiudi mese</button>
-<button class="export" onclick="exportMese()">📤 Esporta mese corrente</button>
-<button class="export" onclick="exportStorico()">📤 Esporta storico completo</button>
-
-<div class="box">
-<h3>Mese corrente</h3>
-Incassi: <span id="inc">0</span> €<br>
-Spese: <span id="spe">0</span> €<br>
-Utile: <span id="uti">0</span> €
+<h2>📊 Giorni salvati</h2>
+<div id="giorni"></div>
 </div>
 
 <div class="box">
-<h2>📊 Storico mesi</h2>
-<div id="storico"></div>
+<h2>📦 Magazzino</h2>
+<input id="prodNome" placeholder="Nome prodotto">
+<input id="prodQta" type="number" placeholder="Quantità">
+<select id="prodCat">
+<option>Food</option>
+<option>Bevande</option>
+<option>Materiale</option>
+</select>
+<button onclick="carico()">➕ Carico</button>
+<button onclick="scarico()">➖ Scarico</button>
+<div id="mag"></div>
+</div>
+
+<div class="box">
+<h2>📤 Esporta</h2>
+<button onclick="exportCSV()">Esporta CSV</button>
 </div>
 
 <script>
-data.value=new Date().toISOString().split("T")[0];
-
-let giorni=JSON.parse(localStorage.getItem("giorni"))||[];
-let mesi=JSON.parse(localStorage.getItem("mesi"))||[];
+let dati=JSON.parse(localStorage.getItem("dati"))||[];
+let magazzino=JSON.parse(localStorage.getItem("mag"))||[];
 
 function salva(){
- let d=new Date(data.value).toLocaleDateString("it-IT");
- if(giorni.some(g=>g.data===d)){alert("Data già inserita");return;}
+ let d=data.value;
+ if(!d) return alert("Scegli la data");
+ if(dati.find(x=>x.data==d)) return alert("Giorno già presente");
 
- let inc=(+contanti.value||0)+(+pos.value||0)+(+satis.value||0);
- let f=+food.value||0;
- let nf=+nonfood.value||0;
- let pers=+personale.value||0;
- let spe=f+nf+pers;
-
- giorni.push({
+ dati.push({
   data:d,
-  contanti:+contanti.value||0,
-  pos:+pos.value||0,
-  satis:+satis.value||0,
-  food:f, forFood:forFood.value,
-  nonfood:nf, forNon:forNon.value,
-  personale:pers,
-  incassi:inc,
-  spese:spe,
-  utile:inc-spe
- });
- localStorage.setItem("giorni",JSON.stringify(giorni));
- aggiorna();
-}
-
-function chiudiMese(){
- if(!confirm("Chiudere il mese?"))return;
- mesi.push({mese:new Date().toISOString().slice(0,7), giorni:[...giorni]});
- localStorage.setItem("mesi",JSON.stringify(mesi));
- giorni=[];
- localStorage.setItem("giorni","[]");
- aggiorna();
-}
-
-function exportMese(){
- let csv="Data
+  cont:+contanti
