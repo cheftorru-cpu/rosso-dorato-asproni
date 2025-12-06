@@ -4,18 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rosso Dorato – Gestionale</title>
-
 <style>
-body { font-family: Arial; background:#f7f7f7; padding:15px }
-h1 { color:#8b0000 }
-.box { background:#fff; padding:15px; border-radius:8px; margin-bottom:15px }
-label { display:block; margin-top:8px }
-input { width:100%; padding:8px; font-size:16px }
-button { width:100%; padding:10px; margin-top:8px; font-size:16px; border:none; border-radius:6px }
-.salva { background:#8b0000; color:#fff }
-.chiudi { background:#333; color:#fff }
-.mag { background:#555; color:#fff }
-.item { background:#eee; padding:8px; margin-top:6px; border-radius:5px }
+body{font-family:Arial;background:#f7f7f7;padding:15px}
+h1{color:#8b0000}
+.box{background:#fff;padding:15px;border-radius:8px;margin-bottom:15px}
+input,select{width:100%;padding:8px;margin-top:6px}
+button{width:100%;padding:10px;margin-top:8px;border:none;border-radius:6px;font-size:16px}
+.salva{background:#8b0000;color:#fff}
+.chiudi{background:#333;color:#fff}
+.mag{background:#555;color:#fff}
+.exp{background:#006400;color:#fff}
+.item{background:#eee;padding:8px;margin-top:6px;border-radius:5px}
 </style>
 </head>
 
@@ -23,8 +22,7 @@ button { width:100%; padding:10px; margin-top:8px; font-size:16px; border:none; 
 
 <h1>Rosso Dorato – Gestionale</h1>
 
-<!-- GESTIONE GIORNALIERA -->
-📅 <strong>Data:</strong>
+📅 Data:
 <input type="date" id="dataScelta">
 
 <div class="box">
@@ -43,35 +41,31 @@ button { width:100%; padding:10px; margin-top:8px; font-size:16px; border:none; 
 
 <button class="salva" onclick="salvaGiornata()">💾 Salva giornata</button>
 <button class="chiudi" onclick="chiudiMese()">🟥 Chiudi mese</button>
+<button class="exp" onclick="exportGiorni()">📤 Esporta giornate</button>
 
 <div class="box">
-Totale incassi: <span id="inc">0</span> €<br>
-Totale spese: <span id="spe">0</span> €<br>
+Incassi: <span id="inc">0</span> €<br>
+Spese: <span id="spe">0</span> €<br>
 Utile: <span id="uti">0</span> €
 </div>
 
-<!-- MAGAZZINO -->
 <div class="box">
 <h2>📦 Magazzino</h2>
-
-<input id="nomeProdotto" placeholder="Nome prodotto">
-<input id="qtaProdotto" type="number" placeholder="Quantità">
+<input id="nome" placeholder="Prodotto">
+<input id="qta" type="number" placeholder="Quantità">
 <select id="tipo">
-<option value="food">Food</option>
-<option value="bevande">Bevande</option>
-<option value="materiale">Materiale</option>
+<option>Food</option>
+<option>Bevande</option>
+<option>Materiale</option>
 </select>
-
 <button class="mag" onclick="carico()">➕ Carico</button>
 <button class="mag" onclick="scarico()">➖ Scarico</button>
-
-<h3>Situazione magazzino</h3>
-<div id="listaMagazzino"></div>
+<button class="exp" onclick="exportMagazzino()">📤 Esporta magazzino</button>
+<div id="listaMag"></div>
 </div>
 
 <script>
 dataScelta.value=new Date().toISOString().split("T")[0];
-
 let giorni=JSON.parse(localStorage.getItem("giorni"))||[];
 let mag=JSON.parse(localStorage.getItem("magazzino"))||[];
 
@@ -86,24 +80,22 @@ function salvaGiornata(){
 }
 
 function chiudiMese(){
+ if(!confirm("Chiudere il mese?"))return;
  giorni=[];
  localStorage.setItem("giorni","[]");
  aggiorna();
 }
 
 function carico(){
- let n=nomeProdotto.value, q=+qtaProdotto.value, t=tipo.value;
- if(!n||!q)return;
- let p=mag.find(m=>m.n===n && m.t===t);
- if(p)p.q+=q;
- else mag.push({n,t,q});
+ let p=mag.find(m=>m.n===nome.value && m.t===tipo.value);
+ if(p)p.q+=+qta.value;
+ else mag.push({n:nome.value,t:tipo.value,q:+qta.value});
  salvaMag();
 }
 
 function scarico(){
- let n=nomeProdotto.value, q=+qtaProdotto.value, t=tipo.value;
- let p=mag.find(m=>m.n===n && m.t===t);
- if(p){p.q-=q;if(p.q<0)p.q=0;}
+ let p=mag.find(m=>m.n===nome.value && m.t===tipo.value);
+ if(p){p.q-=+qta.value;if(p.q<0)p.q=0;}
  salvaMag();
 }
 
@@ -112,16 +104,31 @@ function salvaMag(){
  aggiorna();
 }
 
+function exportGiorni(){
+ let csv="Data,Incassi,Spese,Utile\n";
+ giorni.forEach(g=>csv+=`${g.d},${g.inc},${g.spe},${g.uti}\n`);
+ scarica(csv,"giornate.csv");
+}
+
+function exportMagazzino(){
+ let csv="Prodotto,Categoria,Quantità\n";
+ mag.forEach(m=>csv+=`${m.n},${m.t},${m.q}\n`);
+ scarica(csv,"magazzino.csv");
+}
+
+function scarica(testo,nome){
+ let a=document.createElement("a");
+ a.href=URL.createObjectURL(new Blob([testo],{type:"text/csv"}));
+ a.download=nome;
+ a.click();
+}
+
 function aggiorna(){
- let i=0,s=0,u=0;
+ let i=0,s=0,u=0,h="";
  giorni.forEach(g=>{i+=g.inc;s+=g.spe;u+=g.uti});
  inc.innerText=i; spe.innerText=s; uti.innerText=u;
-
- let h="";
- mag.forEach(m=>{
-  h+=`<div class="item">${m.n} (${m.t}) – <b>${m.q}</b></div>`;
- });
- listaMagazzino.innerHTML=h;
+ mag.forEach(m=>h+=`<div class="item">${m.n} (${m.t}) – ${m.q}</div>`);
+ listaMag.innerHTML=h;
 }
 aggiorna();
 </script>
