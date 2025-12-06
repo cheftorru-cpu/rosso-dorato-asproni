@@ -6,53 +6,15 @@
 <title>Rosso Dorato – Gestionale</title>
 
 <style>
-body {
-    font-family: Arial, sans-serif;
-    background: #f7f7f7;
-    padding: 15px;
-}
-h1 { color: #8b0000; }
-.box {
-    background: white;
-    padding: 15px;
-    margin-bottom: 15px;
-    border-radius: 8px;
-}
-label {
-    display: block;
-    margin-top: 10px;
-}
-input {
-    width: 100%;
-    padding: 8px;
-    font-size: 16px;
-}
-button {
-    width: 100%;
-    padding: 12px;
-    margin-top: 10px;
-    background: #8b0000;
-    color: white;
-    font-size: 18px;
-    border: none;
-    border-radius: 6px;
-}
-.risultato {
-    background: #eee;
-    padding: 12px;
-    border-radius: 8px;
-    font-size: 18px;
-}
-.giorno {
-    background: white;
-    padding: 10px;
-    margin-top: 8px;
-    border-radius: 5px;
-}
-.data {
-    font-size: 18px;
-    margin-bottom: 10px;
-}
+body { font-family: Arial; background:#f7f7f7; padding:15px }
+h1 { color:#8b0000 }
+.box { background:#fff; padding:15px; border-radius:8px; margin-bottom:15px }
+label { display:block; margin-top:10px }
+input { width:100%; padding:8px; font-size:16px }
+button { width:100%; padding:12px; margin-top:10px; font-size:18px; border:none; border-radius:6px }
+.salva { background:#8b0000; color:#fff }
+.chiudi { background:#333; color:#fff }
+.giorno, .mese { background:#fff; padding:10px; margin-top:8px; border-radius:5px }
 </style>
 </head>
 
@@ -60,57 +22,88 @@ button {
 
 <h1>Rosso Dorato – Gestionale</h1>
 
-<div class="data">
 📅 <strong>Scegli data:</strong>
 <input type="date" id="dataScelta">
-</div>
 
 <div class="box">
 <h2>💰 Incassi</h2>
-<label>Contanti €</label><input id="contanti" type="number" value="0">
-<label>POS €</label><input id="pos" type="number" value="0">
-<label>Satispay €</label><input id="satis" type="number" value="0">
+<label>Contanti</label><input id="contanti" type="number" value="0">
+<label>POS</label><input id="pos" type="number" value="0">
+<label>Satispay</label><input id="satis" type="number" value="0">
 </div>
 
 <div class="box">
 <h2>📉 Spese</h2>
-<label>Food €</label><input id="food" type="number" value="0">
-<label>Non food €</label><input id="nonfood" type="number" value="0">
-<label>Extra personale €</label><input id="personale" type="number" value="0">
+<label>Food</label><input id="food" type="number" value="0">
+<label>Non food</label><input id="nonfood" type="number" value="0">
+<label>Extra personale</label><input id="personale" type="number" value="0">
 </div>
 
-<button onclick="salvaGiornata()">💾 Salva giornata</button>
+<button class="salva" onclick="salvaGiornata()">💾 Salva giornata</button>
+<button class="chiudi" onclick="chiudiMese()">🟥 Chiudi mese</button>
 
-<div class="risultato">
-<p><strong>Totale mese incassi:</strong> <span id="meseIncassi">0</span> €</p>
-<p><strong>Totale mese spese:</strong> <span id="meseSpese">0</span> €</p>
-<p><strong>Utile mese:</strong> <span id="meseUtile">0</span> €</p>
+<div class="box">
+<p><strong>Totale mese incassi:</strong> <span id="inc">0</span> €</p>
+<p><strong>Totale mese spese:</strong> <span id="spe">0</span> €</p>
+<p><strong>Utile mese:</strong> <span id="uti">0</span> €</p>
 </div>
 
-<h2>📅 Giorni salvati</h2>
+<h2>📅 Giorni</h2>
 <div id="listaGiorni"></div>
 
+<h2>📦 Storico mesi</h2>
+<div id="storico"></div>
+
 <script>
-// data di oggi predefinita
 document.getElementById("dataScelta").value =
-    new Date().toISOString().split("T")[0];
+new Date().toISOString().split("T")[0];
 
-let dati = JSON.parse(localStorage.getItem("rossoDorato")) || [];
+let giorni = JSON.parse(localStorage.getItem("giorni")) || [];
+let mesi = JSON.parse(localStorage.getItem("mesi")) || [];
 
-function salvaGiornata() {
-    let dataInput = document.getElementById("dataScelta").value;
-    if (!dataInput) {
-        alert("Scegli una data");
-        return;
-    }
+function salvaGiornata(){
+ let data = new Date(dataScelta.value).toLocaleDateString("it-IT");
+ if(giorni.some(g=>g.data===data)){ alert("Giornata già inserita"); return; }
 
-    let data = new Date(dataInput).toLocaleDateString("it-IT");
+ let inc = +contanti.value + +pos.value + +satis.value;
+ let spe = +food.value + +nonfood.value + +personale.value;
+ giorni.push({data,inc,spe,uti:inc-spe});
+ localStorage.setItem("giorni",JSON.stringify(giorni));
+ aggiorna();
+}
 
-    // 🔴 BLOCCO DOPPIONI
-    if (dati.some(g => g.data === data)) {
-        alert("❗ Giornata già inserita");
-        return;
-    }
+function chiudiMese(){
+ if(giorni.length===0){ alert("Nessun dato"); return; }
+ let mese = new Date().toLocaleDateString("it-IT",{month:"long",year:"numeric"});
+ let inc=0,spe=0,uti=0;
+ giorni.forEach(g=>{inc+=g.inc; spe+=g.spe; uti+=g.uti});
+ mesi.push({mese,inc,spe,uti});
+ giorni=[];
+ localStorage.setItem("giorni","[]");
+ localStorage.setItem("mesi",JSON.stringify(mesi));
+ aggiorna();
+}
 
-    let contanti = Number(document.getElementById("contanti").value);
-    let pos = Number(document.getElementById("pos").value);
+function aggiorna(){
+ let inc=0,spe=0,uti=0,html="";
+ giorni.forEach(g=>{
+  inc+=g.inc; spe+=g.spe; uti+=g.uti;
+  html+=`<div class="giorno"><b>${g.data}</b><br>Incassi ${g.inc} € – Spese ${g.spe} €</div>`;
+ });
+ listaGiorni.innerHTML=html;
+ document.getElementById("inc").innerText=inc;
+ document.getElementById("spe").innerText=spe;
+ document.getElementById("uti").innerText=uti;
+
+ let h="";
+ mesi.forEach(m=>{
+  h+=`<div class="mese"><b>${m.mese}</b><br>Utile ${m.uti} €</div>`;
+ });
+ storico.innerHTML=h;
+}
+
+aggiorna();
+</script>
+
+</body>
+</html>
