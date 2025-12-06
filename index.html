@@ -59,8 +59,10 @@ button {
 <body>
 
 <h1>Rosso Dorato – Gestionale</h1>
+
 <div class="data">
-📅 <strong>Giornata:</strong> <span id="dataOggi"></span>
+📅 <strong>Scegli data:</strong>
+<input type="date" id="dataScelta">
 </div>
 
 <div class="box">
@@ -89,13 +91,20 @@ button {
 <div id="listaGiorni"></div>
 
 <script>
-document.getElementById("dataOggi").innerText =
-    new Date().toLocaleDateString("it-IT");
+// imposta oggi come data predefinita
+document.getElementById("dataScelta").value =
+    new Date().toISOString().split("T")[0];
 
 let dati = JSON.parse(localStorage.getItem("rossoDorato")) || [];
 
 function salvaGiornata() {
-    let oggi = new Date().toLocaleDateString("it-IT");
+    let dataInput = document.getElementById("dataScelta").value;
+    if (!dataInput) {
+        alert("Scegli una data");
+        return;
+    }
+
+    let data = new Date(dataInput).toLocaleDateString("it-IT");
 
     let contanti = Number(document.getElementById("contanti").value);
     let pos = Number(document.getElementById("pos").value);
@@ -109,14 +118,9 @@ function salvaGiornata() {
     let spese = food + nonfood + personale;
     let utile = incassi - spese;
 
-    dati.push({
-        data: oggi,
-        incassi: incassi,
-        spese: spese,
-        utile: utile
-    });
-
+    dati.push({ data, incassi, spese, utile });
     localStorage.setItem("rossoDorato", JSON.stringify(dati));
+
     aggiorna();
 }
 
