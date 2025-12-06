@@ -9,12 +9,13 @@
 body { font-family: Arial; background:#f7f7f7; padding:15px }
 h1 { color:#8b0000 }
 .box { background:#fff; padding:15px; border-radius:8px; margin-bottom:15px }
-label { display:block; margin-top:10px }
+label { display:block; margin-top:8px }
 input { width:100%; padding:8px; font-size:16px }
-button { width:100%; padding:12px; margin-top:10px; font-size:18px; border:none; border-radius:6px }
+button { width:100%; padding:10px; margin-top:8px; font-size:16px; border:none; border-radius:6px }
 .salva { background:#8b0000; color:#fff }
 .chiudi { background:#333; color:#fff }
-.giorno, .mese { background:#fff; padding:10px; margin-top:8px; border-radius:5px }
+.mag { background:#555; color:#fff }
+.item { background:#eee; padding:8px; margin-top:6px; border-radius:5px }
 </style>
 </head>
 
@@ -22,86 +23,106 @@ button { width:100%; padding:12px; margin-top:10px; font-size:18px; border:none;
 
 <h1>Rosso Dorato – Gestionale</h1>
 
-📅 <strong>Scegli data:</strong>
+<!-- GESTIONE GIORNALIERA -->
+📅 <strong>Data:</strong>
 <input type="date" id="dataScelta">
 
 <div class="box">
-<h2>💰 Incassi</h2>
-<label>Contanti</label><input id="contanti" type="number" value="0">
-<label>POS</label><input id="pos" type="number" value="0">
-<label>Satispay</label><input id="satis" type="number" value="0">
+<h3>Incassi</h3>
+<input id="contanti" type="number" placeholder="Contanti">
+<input id="pos" type="number" placeholder="POS">
+<input id="satis" type="number" placeholder="Satispay">
 </div>
 
 <div class="box">
-<h2>📉 Spese</h2>
-<label>Food</label><input id="food" type="number" value="0">
-<label>Non food</label><input id="nonfood" type="number" value="0">
-<label>Extra personale</label><input id="personale" type="number" value="0">
+<h3>Spese</h3>
+<input id="food" type="number" placeholder="Food">
+<input id="nonfood" type="number" placeholder="Non food">
+<input id="personale" type="number" placeholder="Extra personale">
 </div>
 
 <button class="salva" onclick="salvaGiornata()">💾 Salva giornata</button>
 <button class="chiudi" onclick="chiudiMese()">🟥 Chiudi mese</button>
 
 <div class="box">
-<p><strong>Totale mese incassi:</strong> <span id="inc">0</span> €</p>
-<p><strong>Totale mese spese:</strong> <span id="spe">0</span> €</p>
-<p><strong>Utile mese:</strong> <span id="uti">0</span> €</p>
+Totale incassi: <span id="inc">0</span> €<br>
+Totale spese: <span id="spe">0</span> €<br>
+Utile: <span id="uti">0</span> €
 </div>
 
-<h2>📅 Giorni</h2>
-<div id="listaGiorni"></div>
+<!-- MAGAZZINO -->
+<div class="box">
+<h2>📦 Magazzino</h2>
 
-<h2>📦 Storico mesi</h2>
-<div id="storico"></div>
+<input id="nomeProdotto" placeholder="Nome prodotto">
+<input id="qtaProdotto" type="number" placeholder="Quantità">
+<select id="tipo">
+<option value="food">Food</option>
+<option value="bevande">Bevande</option>
+<option value="materiale">Materiale</option>
+</select>
+
+<button class="mag" onclick="carico()">➕ Carico</button>
+<button class="mag" onclick="scarico()">➖ Scarico</button>
+
+<h3>Situazione magazzino</h3>
+<div id="listaMagazzino"></div>
+</div>
 
 <script>
-document.getElementById("dataScelta").value =
-new Date().toISOString().split("T")[0];
+dataScelta.value=new Date().toISOString().split("T")[0];
 
-let giorni = JSON.parse(localStorage.getItem("giorni")) || [];
-let mesi = JSON.parse(localStorage.getItem("mesi")) || [];
+let giorni=JSON.parse(localStorage.getItem("giorni"))||[];
+let mag=JSON.parse(localStorage.getItem("magazzino"))||[];
 
 function salvaGiornata(){
- let data = new Date(dataScelta.value).toLocaleDateString("it-IT");
- if(giorni.some(g=>g.data===data)){ alert("Giornata già inserita"); return; }
-
- let inc = +contanti.value + +pos.value + +satis.value;
- let spe = +food.value + +nonfood.value + +personale.value;
- giorni.push({data,inc,spe,uti:inc-spe});
+ let d=new Date(dataScelta.value).toLocaleDateString("it-IT");
+ if(giorni.some(g=>g.d===d)){alert("Giornata già inserita");return;}
+ let inc=+contanti.value + +pos.value + +satis.value;
+ let spe=+food.value + +nonfood.value + +personale.value;
+ giorni.push({d,inc,spe,uti:inc-spe});
  localStorage.setItem("giorni",JSON.stringify(giorni));
  aggiorna();
 }
 
 function chiudiMese(){
- if(giorni.length===0){ alert("Nessun dato"); return; }
- let mese = new Date().toLocaleDateString("it-IT",{month:"long",year:"numeric"});
- let inc=0,spe=0,uti=0;
- giorni.forEach(g=>{inc+=g.inc; spe+=g.spe; uti+=g.uti});
- mesi.push({mese,inc,spe,uti});
  giorni=[];
  localStorage.setItem("giorni","[]");
- localStorage.setItem("mesi",JSON.stringify(mesi));
+ aggiorna();
+}
+
+function carico(){
+ let n=nomeProdotto.value, q=+qtaProdotto.value, t=tipo.value;
+ if(!n||!q)return;
+ let p=mag.find(m=>m.n===n && m.t===t);
+ if(p)p.q+=q;
+ else mag.push({n,t,q});
+ salvaMag();
+}
+
+function scarico(){
+ let n=nomeProdotto.value, q=+qtaProdotto.value, t=tipo.value;
+ let p=mag.find(m=>m.n===n && m.t===t);
+ if(p){p.q-=q;if(p.q<0)p.q=0;}
+ salvaMag();
+}
+
+function salvaMag(){
+ localStorage.setItem("magazzino",JSON.stringify(mag));
  aggiorna();
 }
 
 function aggiorna(){
- let inc=0,spe=0,uti=0,html="";
- giorni.forEach(g=>{
-  inc+=g.inc; spe+=g.spe; uti+=g.uti;
-  html+=`<div class="giorno"><b>${g.data}</b><br>Incassi ${g.inc} € – Spese ${g.spe} €</div>`;
- });
- listaGiorni.innerHTML=html;
- document.getElementById("inc").innerText=inc;
- document.getElementById("spe").innerText=spe;
- document.getElementById("uti").innerText=uti;
+ let i=0,s=0,u=0;
+ giorni.forEach(g=>{i+=g.inc;s+=g.spe;u+=g.uti});
+ inc.innerText=i; spe.innerText=s; uti.innerText=u;
 
  let h="";
- mesi.forEach(m=>{
-  h+=`<div class="mese"><b>${m.mese}</b><br>Utile ${m.uti} €</div>`;
+ mag.forEach(m=>{
+  h+=`<div class="item">${m.n} (${m.t}) – <b>${m.q}</b></div>`;
  });
- storico.innerHTML=h;
+ listaMagazzino.innerHTML=h;
 }
-
 aggiorna();
 </script>
 
