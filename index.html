@@ -12,6 +12,7 @@ input{width:100%;padding:8px;margin-top:6px}
 button{width:100%;padding:10px;margin-top:8px;font-size:16px;border:none;border-radius:6px}
 .salva{background:#8b0000;color:#fff}
 .chiudi{background:#000;color:#fff}
+.export{background:#006400;color:#fff}
 .item{background:#eee;padding:6px;margin-top:5px;border-radius:4px}
 .mese{background:#ddd;padding:8px;margin-top:10px;border-radius:6px}
 .giorno{background:#fafafa;padding:6px;margin-top:5px;border-radius:4px}
@@ -43,6 +44,8 @@ button{width:100%;padding:10px;margin-top:8px;font-size:16px;border:none;border-
 
 <button class="salva" onclick="salva()">💾 Salva giornata</button>
 <button class="chiudi" onclick="chiudiMese()">🟥 Chiudi mese</button>
+<button class="export" onclick="exportMese()">📤 Esporta mese corrente</button>
+<button class="export" onclick="exportStorico()">📤 Esporta storico completo</button>
 
 <div class="box">
 <h3>Mese corrente</h3>
@@ -57,7 +60,7 @@ Utile: <span id="uti">0</span> €
 </div>
 
 <script>
-document.getElementById("data").value=new Date().toISOString().split("T")[0];
+data.value=new Date().toISOString().split("T")[0];
 
 let giorni=JSON.parse(localStorage.getItem("giorni"))||[];
 let mesi=JSON.parse(localStorage.getItem("mesi"))||[];
@@ -66,11 +69,7 @@ function salva(){
  let d=new Date(data.value).toLocaleDateString("it-IT");
  if(giorni.some(g=>g.data===d)){alert("Data già inserita");return;}
 
- let c=+contanti.value||0;
- let p=+pos.value||0;
- let s=+satis.value||0;
- let inc=c+p+s;
-
+ let inc=(+contanti.value||0)+(+pos.value||0)+(+satis.value||0);
  let f=+food.value||0;
  let nf=+nonfood.value||0;
  let pers=+personale.value||0;
@@ -78,12 +77,14 @@ function salva(){
 
  giorni.push({
   data:d,
-  incassi:{c,p,s},
-  food:{v:f,f:forFood.value},
-  nonfood:{v:nf,f:forNon.value},
+  contanti:+contanti.value||0,
+  pos:+pos.value||0,
+  satis:+satis.value||0,
+  food:f, forFood:forFood.value,
+  nonfood:nf, forNon:forNon.value,
   personale:pers,
-  totaleInc:inc,
-  totaleSpe:spe,
+  incassi:inc,
+  spese:spe,
   utile:inc-spe
  });
  localStorage.setItem("giorni",JSON.stringify(giorni));
@@ -91,53 +92,13 @@ function salva(){
 }
 
 function chiudiMese(){
- if(!confirm("Chiudere il mese e salvare nello storico?"))return;
-
- let meseNome=new Date().toISOString().slice(0,7);
- mesi.push({mese:meseNome,giorni:[...giorni]});
+ if(!confirm("Chiudere il mese?"))return;
+ mesi.push({mese:new Date().toISOString().slice(0,7), giorni:[...giorni]});
  localStorage.setItem("mesi",JSON.stringify(mesi));
-
  giorni=[];
  localStorage.setItem("giorni","[]");
  aggiorna();
 }
 
-function aggiorna(){
- let inc=0,spe=0,uti=0;
- giorni.forEach(g=>{
-  inc+=g.totaleInc;
-  spe+=g.totaleSpe;
-  uti+=g.utile;
- });
- document.getElementById("inc").innerText=inc;
- document.getElementById("spe").innerText=spe;
- document.getElementById("uti").innerText=uti;
-
- let h="";
- mesi.slice().reverse().forEach((m,i)=>{
-  h+=`<div class="mese" onclick="toggle(${i})">
-       ▶ ${m.mese}
-       <div id="m${i}" style="display:none">`;
-  m.giorni.forEach(g=>{
-   h+=`<div class="giorno">
-        <strong>${g.data}</strong><br>
-        Incassi: ${g.totaleInc} €<br>
-        Spese: ${g.totaleSpe} €<br>
-        Utile: ${g.utile} €
-       </div>`;
-  });
-  h+=`</div></div>`;
- });
- document.getElementById("storico").innerHTML=h||"Nessun mese chiuso";
-}
-
-function toggle(i){
- let el=document.getElementById("m"+i);
- el.style.display=el.style.display==="none"?"block":"none";
-}
-
-aggiorna();
-</script>
-
-</body>
-</html>
+function exportMese(){
+ let csv="Data
