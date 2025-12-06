@@ -2,19 +2,18 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Rosso Dorato – Gestionale</title>
 <style>
-body{font-family:Arial;background:#f7f7f7;padding:15px}
+body{font-family:Arial;background:#f6f6f6;padding:15px}
 h1{color:#8b0000}
 .box{background:#fff;padding:15px;border-radius:8px;margin-bottom:15px}
 input,select{width:100%;padding:8px;margin-top:6px}
-button{width:100%;padding:10px;margin-top:8px;border:none;border-radius:6px;font-size:16px}
+button{width:100%;padding:10px;margin-top:8px;font-size:16px;border:none;border-radius:6px}
 .salva{background:#8b0000;color:#fff}
-.chiudi{background:#333;color:#fff}
-.mag{background:#555;color:#fff}
+.chiudi{background:#000;color:#fff}
 .exp{background:#006400;color:#fff}
-.item{background:#eee;padding:8px;margin-top:6px;border-radius:5px}
+.item{background:#eee;padding:6px;margin-top:5px;border-radius:4px}
 </style>
 </head>
 
@@ -34,47 +33,47 @@ button{width:100%;padding:10px;margin-top:8px;border:none;border-radius:6px;font
 
 <div class="box">
 <h3>Spese</h3>
-<input id="food" type="number" placeholder="Food">
-<input id="nonfood" type="number" placeholder="Non food">
+<input id="food" type="number" placeholder="Spesa Food">
+<input id="fornitoreFood" placeholder="Fornitore Food">
+<input id="nonfood" type="number" placeholder="Spesa Non Food">
+<input id="fornitoreNonFood" placeholder="Fornitore Non Food">
 <input id="personale" type="number" placeholder="Extra personale">
 </div>
 
 <button class="salva" onclick="salvaGiornata()">💾 Salva giornata</button>
 <button class="chiudi" onclick="chiudiMese()">🟥 Chiudi mese</button>
-<button class="exp" onclick="exportGiorni()">📤 Esporta giornate</button>
 
 <div class="box">
+<strong>Totali mese</strong><br>
 Incassi: <span id="inc">0</span> €<br>
 Spese: <span id="spe">0</span> €<br>
 Utile: <span id="uti">0</span> €
 </div>
 
 <div class="box">
-<h2>📦 Magazzino</h2>
-<input id="nome" placeholder="Prodotto">
-<input id="qta" type="number" placeholder="Quantità">
-<select id="tipo">
-<option>Food</option>
-<option>Bevande</option>
-<option>Materiale</option>
-</select>
-<button class="mag" onclick="carico()">➕ Carico</button>
-<button class="mag" onclick="scarico()">➖ Scarico</button>
-<button class="exp" onclick="exportMagazzino()">📤 Esporta magazzino</button>
-<div id="listaMag"></div>
+<h2>🏪 Spese per fornitore (mese)</h2>
+<div id="fornitori"></div>
 </div>
 
 <script>
 dataScelta.value=new Date().toISOString().split("T")[0];
 let giorni=JSON.parse(localStorage.getItem("giorni"))||[];
-let mag=JSON.parse(localStorage.getItem("magazzino"))||[];
 
 function salvaGiornata(){
  let d=new Date(dataScelta.value).toLocaleDateString("it-IT");
  if(giorni.some(g=>g.d===d)){alert("Giornata già inserita");return;}
+
  let inc=+contanti.value + +pos.value + +satis.value;
- let spe=+food.value + +nonfood.value + +personale.value;
- giorni.push({d,inc,spe,uti:inc-spe});
+ let speFood=+food.value;
+ let speNonFood=+nonfood.value;
+ let spePers=+personale.value;
+ let spe=speFood+speNonFood+spePers;
+
+ giorni.push({
+  d,inc,spe,uti:inc-spe,
+  food:{v:speFood,f:fornitoreFood.value},
+  nonfood:{v:speNonFood,f:fornitoreNonFood.value}
+ });
  localStorage.setItem("giorni",JSON.stringify(giorni));
  aggiorna();
 }
@@ -86,49 +85,23 @@ function chiudiMese(){
  aggiorna();
 }
 
-function carico(){
- let p=mag.find(m=>m.n===nome.value && m.t===tipo.value);
- if(p)p.q+=+qta.value;
- else mag.push({n:nome.value,t:tipo.value,q:+qta.value});
- salvaMag();
-}
-
-function scarico(){
- let p=mag.find(m=>m.n===nome.value && m.t===tipo.value);
- if(p){p.q-=+qta.value;if(p.q<0)p.q=0;}
- salvaMag();
-}
-
-function salvaMag(){
- localStorage.setItem("magazzino",JSON.stringify(mag));
- aggiorna();
-}
-
-function exportGiorni(){
- let csv="Data,Incassi,Spese,Utile\n";
- giorni.forEach(g=>csv+=`${g.d},${g.inc},${g.spe},${g.uti}\n`);
- scarica(csv,"giornate.csv");
-}
-
-function exportMagazzino(){
- let csv="Prodotto,Categoria,Quantità\n";
- mag.forEach(m=>csv+=`${m.n},${m.t},${m.q}\n`);
- scarica(csv,"magazzino.csv");
-}
-
-function scarica(testo,nome){
- let a=document.createElement("a");
- a.href=URL.createObjectURL(new Blob([testo],{type:"text/csv"}));
- a.download=nome;
- a.click();
-}
-
 function aggiorna(){
- let i=0,s=0,u=0,h="";
- giorni.forEach(g=>{i+=g.inc;s+=g.spe;u+=g.uti});
+ let i=0,s=0,u=0;
+ let f={};
+ giorni.forEach(g=>{
+  i+=g.inc;s+=g.spe;u+=g.uti;
+  if(g.food.v>0 && g.food.f){
+    f[g.food.f]=(f[g.food.f]||0)+g.food.v;
+  }
+  if(g.nonfood.v>0 && g.nonfood.f){
+    f[g.nonfood.f]=(f[g.nonfood.f]||0)+g.nonfood.v;
+  }
+ });
  inc.innerText=i; spe.innerText=s; uti.innerText=u;
- mag.forEach(m=>h+=`<div class="item">${m.n} (${m.t}) – ${m.q}</div>`);
- listaMag.innerHTML=h;
+
+ let h="";
+ for(let k in f){h+=`<div class="item">${k} → ${f[k]} €</div>`}
+ fornitori.innerHTML=h || "Nessuna spesa inserita";
 }
 aggiorna();
 </script>
