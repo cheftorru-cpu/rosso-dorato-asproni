@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rosso Dorato - Gestione Giornaliera</title>
+<title>Rosso Dorato - Gestione</title>
 
 <style>
 body {
@@ -30,6 +30,7 @@ input {
 button {
     width: 100%;
     padding: 12px;
+    margin-top: 10px;
     background: #8b0000;
     color: white;
     font-size: 18px;
@@ -42,6 +43,12 @@ button {
     border-radius: 8px;
     font-size: 18px;
 }
+.giorno {
+    background: white;
+    padding: 10px;
+    margin-top: 8px;
+    border-radius: 5px;
+}
 </style>
 </head>
 
@@ -51,40 +58,35 @@ button {
 
 <div class="box">
 <h2>💰 Incassi</h2>
-
-<label>Contanti €</label>
-<input id="contanti" type="number" value="0">
-
-<label>POS €</label>
-<input id="pos" type="number" value="0">
-
-<label>Satispay €</label>
-<input id="satis" type="number" value="0">
+<label>Contanti €</label><input id="contanti" type="number" value="0">
+<label>POS €</label><input id="pos" type="number" value="0">
+<label>Satispay €</label><input id="satis" type="number" value="0">
 </div>
 
 <div class="box">
 <h2>📉 Spese</h2>
-
-<label>Food €</label>
-<input id="food" type="number" value="0">
-
-<label>Non Food €</label>
-<input id="nonfood" type="number" value="0">
-
-<label>Extra Personale €</label>
-<input id="personale" type="number" value="0">
+<label>Food €</label><input id="food" type="number" value="0">
+<label>Non Food €</label><input id="nonfood" type="number" value="0">
+<label>Extra Personale €</label><input id="personale" type="number" value="0">
 </div>
 
-<button onclick="calcola()">Calcola Totali Giorno</button>
+<button onclick="salvaGiornata()">💾 Salva giornata</button>
 
 <div class="risultato">
-<p><strong>Totale Incassi:</strong> <span id="totIncassi">0</span> €</p>
-<p><strong>Totale Spese:</strong> <span id="totSpese">0</span> €</p>
-<p><strong>Utile Giornaliero:</strong> <span id="utile">0</span> €</p>
+<p><strong>Totale mese incassi:</strong> <span id="meseIncassi">0</span> €</p>
+<p><strong>Totale mese spese:</strong> <span id="meseSpese">0</span> €</p>
+<p><strong>Utile mese:</strong> <span id="meseUtile">0</span> €</p>
 </div>
 
+<h2>📅 Giorni salvati</h2>
+<div id="listaGiorni"></div>
+
 <script>
-function calcola() {
+let dati = JSON.parse(localStorage.getItem("rossoDorato")) || [];
+
+function salvaGiornata() {
+    let oggi = new Date().toLocaleDateString("it-IT");
+
     let contanti = Number(document.getElementById("contanti").value);
     let pos = Number(document.getElementById("pos").value);
     let satis = Number(document.getElementById("satis").value);
@@ -93,14 +95,39 @@ function calcola() {
     let nonfood = Number(document.getElementById("nonfood").value);
     let personale = Number(document.getElementById("personale").value);
 
-    let totIncassi = contanti + pos + satis;
-    let totSpese = food + nonfood + personale;
-    let utile = totIncassi - totSpese;
+    let incassi = contanti + pos + satis;
+    let spese = food + nonfood + personale;
+    let utile = incassi - spese;
 
-    document.getElementById("totIncassi").innerText = totIncassi.toFixed(2);
-    document.getElementById("totSpese").innerText = totSpese.toFixed(2);
-    document.getElementById("utile").innerText = utile.toFixed(2);
+    dati.push({ oggi, incassi, spese, utile });
+    localStorage.setItem("rossoDorato", JSON.stringify(dati));
+
+    aggiorna();
 }
+
+function aggiorna() {
+    let inc = 0, spe = 0, uti = 0;
+    let lista = "";
+
+    dati.forEach(g => {
+        inc += g.incassi;
+        spe += g.spese;
+        uti += g.utile;
+        lista += `<div class="giorno">
+            <strong>${g.oggi}</strong><br>
+            Incassi: ${g.incassi} €<br>
+            Spese: ${g.spese} €<br>
+            Utile: ${g.utile} €
+        </div>`;
+    });
+
+    document.getElementById("meseIncassi").innerText = inc.toFixed(2);
+    document.getElementById("meseSpese").innerText = spe.toFixed(2);
+    document.getElementById("meseUtile").innerText = uti.toFixed(2);
+    document.getElementById("listaGiorni").innerHTML = lista;
+}
+
+aggiorna();
 </script>
 
 </body>
