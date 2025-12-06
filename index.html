@@ -91,7 +91,7 @@ button {
 <div id="listaGiorni"></div>
 
 <script>
-// imposta oggi come data predefinita
+// data di oggi predefinita
 document.getElementById("dataScelta").value =
     new Date().toISOString().split("T")[0];
 
@@ -106,49 +106,11 @@ function salvaGiornata() {
 
     let data = new Date(dataInput).toLocaleDateString("it-IT");
 
+    // 🔴 BLOCCO DOPPIONI
+    if (dati.some(g => g.data === data)) {
+        alert("❗ Giornata già inserita");
+        return;
+    }
+
     let contanti = Number(document.getElementById("contanti").value);
     let pos = Number(document.getElementById("pos").value);
-    let satis = Number(document.getElementById("satis").value);
-
-    let food = Number(document.getElementById("food").value);
-    let nonfood = Number(document.getElementById("nonfood").value);
-    let personale = Number(document.getElementById("personale").value);
-
-    let incassi = contanti + pos + satis;
-    let spese = food + nonfood + personale;
-    let utile = incassi - spese;
-
-    dati.push({ data, incassi, spese, utile });
-    localStorage.setItem("rossoDorato", JSON.stringify(dati));
-
-    aggiorna();
-}
-
-function aggiorna() {
-    let inc = 0, spe = 0, uti = 0;
-    let lista = "";
-
-    dati.forEach(g => {
-        inc += g.incassi;
-        spe += g.spese;
-        uti += g.utile;
-        lista += `
-        <div class="giorno">
-            <strong>${g.data}</strong><br>
-            Incassi: ${g.incassi.toFixed(2)} €<br>
-            Spese: ${g.spese.toFixed(2)} €<br>
-            Utile: ${g.utile.toFixed(2)} €
-        </div>`;
-    });
-
-    document.getElementById("meseIncassi").innerText = inc.toFixed(2);
-    document.getElementById("meseSpese").innerText = spe.toFixed(2);
-    document.getElementById("meseUtile").innerText = uti.toFixed(2);
-    document.getElementById("listaGiorni").innerHTML = lista;
-}
-
-aggiorna();
-</script>
-
-</body>
-</html>
