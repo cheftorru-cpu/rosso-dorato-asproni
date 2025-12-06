@@ -4,13 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Rosso Dorato Asproni</title>
+
 <style>
-body{font-family:Arial;padding:10px;background:#f7f7f7}
-h2{margin-top:30px}
-input,select,button{width:100%;margin:5px 0;padding:8px}
-button{background:#b30000;color:#fff;border:none;border-radius:5px}
-.box{background:#fff;padding:10px;margin-bottom:15px;border-radius:8px}
-.item{border-bottom:1px solid #ddd;padding:5px}
+body{font-family:Arial;background:#f4f4f4;padding:10px}
+h1{text-align:center}
+.box{background:white;padding:10px;margin-bottom:15px;border-radius:10px}
+input,select,button{width:100%;padding:8px;margin:5px 0}
+button{background:#b00000;color:white;border:none;border-radius:6px}
+.month{background:#eee;padding:8px;margin-top:10px;border-radius:6px}
+.day{padding:6px;border-bottom:1px solid #ddd}
 .small{font-size:12px;color:#555}
 </style>
 </head>
@@ -20,18 +22,18 @@ button{background:#b30000;color:#fff;border:none;border-radius:5px}
 <h1>🍷 Rosso Dorato Asproni</h1>
 
 <div class="box">
-<h2>📅 Giornata</h2>
+<h2>📅 Inserisci giornata</h2>
 <input type="date" id="data">
 
-<input type="number" id="contanti" placeholder="Incassi contanti">
-<input type="number" id="pos" placeholder="Incassi POS">
-<input type="number" id="satis" placeholder="Incassi Satispay">
+<input type="number" id="contanti" placeholder="Contanti">
+<input type="number" id="pos" placeholder="POS">
+<input type="number" id="satis" placeholder="Satispay">
 
-<input type="number" id="food" placeholder="Spese FOOD">
-<input id="fornFood" placeholder="Fornitore food">
+<input type="number" id="food" placeholder="Spese Food">
+<input id="fornFood" placeholder="Fornitore Food">
 
-<input type="number" id="nonfood" placeholder="Spese NON food">
-<input id="fornNon" placeholder="Fornitore non food">
+<input type="number" id="nonfood" placeholder="Spese Non Food">
+<input id="fornNon" placeholder="Fornitore Non Food">
 
 <input type="number" id="extra" placeholder="Extra personale">
 
@@ -39,38 +41,69 @@ button{background:#b30000;color:#fff;border:none;border-radius:5px}
 </div>
 
 <div class="box">
-<h2>📊 Giorni salvati</h2>
-<div id="giorni"></div>
-</div>
-
-<div class="box">
-<h2>📦 Magazzino</h2>
-<input id="prodNome" placeholder="Nome prodotto">
-<input id="prodQta" type="number" placeholder="Quantità">
-<select id="prodCat">
-<option>Food</option>
-<option>Bevande</option>
-<option>Materiale</option>
-</select>
-<button onclick="carico()">➕ Carico</button>
-<button onclick="scarico()">➖ Scarico</button>
-<div id="mag"></div>
-</div>
-
-<div class="box">
-<h2>📤 Esporta</h2>
-<button onclick="exportCSV()">Esporta CSV</button>
+<h2>📚 Storico</h2>
+<div id="storico"></div>
 </div>
 
 <script>
-let dati=JSON.parse(localStorage.getItem("dati"))||[];
-let magazzino=JSON.parse(localStorage.getItem("mag"))||[];
+let dati = JSON.parse(localStorage.getItem("dati")) || [];
 
 function salva(){
- let d=data.value;
- if(!d) return alert("Scegli la data");
- if(dati.find(x=>x.data==d)) return alert("Giorno già presente");
+ if(!data.value) return alert("Seleziona la data");
+ if(dati.find(d=>d.data==data.value)) return alert("Data già inserita");
 
  dati.push({
-  data:d,
-  cont:+contanti
+  data:data.value,
+  cont:+contanti.value||0,
+  pos:+pos.value||0,
+  sat:+satis.value||0,
+  food:+food.value||0,
+  ffood:fornFood.value,
+  non:+nonfood.value||0,
+  fnon:fornNon.value,
+  extra:+extra.value||0
+ });
+
+ localStorage.setItem("dati",JSON.stringify(dati));
+ aggiornaStorico();
+}
+
+function aggiornaStorico(){
+ let mesi={};
+
+ dati.forEach(g=>{
+  let m=g.data.substring(0,7);
+  mesi[m]=mesi[m]||[];
+  mesi[m].push(g);
+ });
+
+ storico.innerHTML="";
+
+ Object.keys(mesi).sort().reverse().forEach(m=>{
+  let div=document.createElement("div");
+  div.className="month";
+  div.innerHTML=`<b>${m}</b>`;
+
+  mesi[m].sort((a,b)=>a.data.localeCompare(b.data)).forEach(g=>{
+    let inc=g.cont+g.pos+g.sat;
+    let sp=g.food+g.non+g.extra;
+    div.innerHTML+=`
+    <div class="day">
+     ${g.data}<br>
+     Incassi ${inc}€ – Spese ${sp}€ – Utile ${inc-sp}€
+     <div class="small">
+      Food ${g.food}€ (${g.ffood||"-"})<br>
+      Non food ${g.non}€ (${g.fnon||"-"})
+     </div>
+    </div>`;
+  });
+
+ storico.appendChild(div);
+ });
+}
+
+aggiornaStorico();
+</script>
+
+</body>
+</html>
