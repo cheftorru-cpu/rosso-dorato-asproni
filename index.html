@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rosso Dorato - Gestione</title>
+<title>Rosso Dorato – Gestionale</title>
 
 <style>
 body {
@@ -35,7 +35,7 @@ button {
     color: white;
     font-size: 18px;
     border: none;
-    border-radius: 5px;
+    border-radius: 6px;
 }
 .risultato {
     background: #eee;
@@ -49,12 +49,19 @@ button {
     margin-top: 8px;
     border-radius: 5px;
 }
+.data {
+    font-size: 18px;
+    margin-bottom: 10px;
+}
 </style>
 </head>
 
 <body>
 
-<h1>Rosso Dorato – Giornata</h1>
+<h1>Rosso Dorato – Gestionale</h1>
+<div class="data">
+📅 <strong>Giornata:</strong> <span id="dataOggi"></span>
+</div>
 
 <div class="box">
 <h2>💰 Incassi</h2>
@@ -66,8 +73,8 @@ button {
 <div class="box">
 <h2>📉 Spese</h2>
 <label>Food €</label><input id="food" type="number" value="0">
-<label>Non Food €</label><input id="nonfood" type="number" value="0">
-<label>Extra Personale €</label><input id="personale" type="number" value="0">
+<label>Non food €</label><input id="nonfood" type="number" value="0">
+<label>Extra personale €</label><input id="personale" type="number" value="0">
 </div>
 
 <button onclick="salvaGiornata()">💾 Salva giornata</button>
@@ -82,6 +89,9 @@ button {
 <div id="listaGiorni"></div>
 
 <script>
+document.getElementById("dataOggi").innerText =
+    new Date().toLocaleDateString("it-IT");
+
 let dati = JSON.parse(localStorage.getItem("rossoDorato")) || [];
 
 function salvaGiornata() {
@@ -99,9 +109,14 @@ function salvaGiornata() {
     let spese = food + nonfood + personale;
     let utile = incassi - spese;
 
-    dati.push({ oggi, incassi, spese, utile });
-    localStorage.setItem("rossoDorato", JSON.stringify(dati));
+    dati.push({
+        data: oggi,
+        incassi: incassi,
+        spese: spese,
+        utile: utile
+    });
 
+    localStorage.setItem("rossoDorato", JSON.stringify(dati));
     aggiorna();
 }
 
@@ -113,11 +128,12 @@ function aggiorna() {
         inc += g.incassi;
         spe += g.spese;
         uti += g.utile;
-        lista += `<div class="giorno">
-            <strong>${g.oggi}</strong><br>
-            Incassi: ${g.incassi} €<br>
-            Spese: ${g.spese} €<br>
-            Utile: ${g.utile} €
+        lista += `
+        <div class="giorno">
+            <strong>${g.data}</strong><br>
+            Incassi: ${g.incassi.toFixed(2)} €<br>
+            Spese: ${g.spese.toFixed(2)} €<br>
+            Utile: ${g.utile.toFixed(2)} €
         </div>`;
     });
 
