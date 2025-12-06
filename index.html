@@ -1,103 +1,107 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Rosso Dorato - Gestione Incassi</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        h1 {
-            color: #b30000;
-        }
-        .box {
-            border: 1px solid #aaa;
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-        }
-        label {
-            display: block;
-            margin-top: 10px;
-            font-weight: bold;
-        }
-        input {
-            width: 100%;
-            padding: 8px;
-            margin-top: 5px;
-        }
-        button {
-            padding: 10px;
-            margin-top: 15px;
-            background: #b30000;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .totali {
-            background: #f5f5f5;
-            padding: 10px;
-            border-radius: 5px;
-            margin-top: 20px;
-            font-size: 18px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rosso Dorato - Gestione Giornaliera</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f7f7f7;
+    padding: 15px;
+}
+h1 { color: #8b0000; }
+.box {
+    background: white;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+}
+label {
+    display: block;
+    margin-top: 10px;
+}
+input {
+    width: 100%;
+    padding: 8px;
+    font-size: 16px;
+}
+button {
+    width: 100%;
+    padding: 12px;
+    background: #8b0000;
+    color: white;
+    font-size: 18px;
+    border: none;
+    border-radius: 5px;
+}
+.risultato {
+    background: #eee;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 18px;
+}
+</style>
 </head>
+
 <body>
 
-    <h1>Rosso Dorato - Gestione Giornaliera Incassi</h1>
+<h1>Rosso Dorato – Giornata</h1>
 
-    <div class="box">
-        <h2>Incassi</h2>
-        
-        <label>Contanti (€)</label>
-        <input id="contanti" type="number" placeholder="0">
+<div class="box">
+<h2>💰 Incassi</h2>
 
-        <label>POS (€)</label>
-        <input id="pos" type="number" placeholder="0">
+<label>Contanti €</label>
+<input id="contanti" type="number" value="0">
 
-        <label>Satispay (€)</label>
-        <input id="satispay" type="number" placeholder="0">
-    </div>
+<label>POS €</label>
+<input id="pos" type="number" value="0">
 
-    <div class="box">
-        <h2>Spese</h2>
+<label>Satispay €</label>
+<input id="satis" type="number" value="0">
+</div>
 
-        <label>Uscite (€)</label>
-        <input id="uscite" type="number" placeholder="0">
+<div class="box">
+<h2>📉 Spese</h2>
 
-        <label>Cassiere (€)</label>
-        <input id="cassiere" type="number" placeholder="0">
-    </div>
+<label>Food €</label>
+<input id="food" type="number" value="0">
 
-    <button onclick="calcola()">Calcola Totale Giornata</button>
+<label>Non Food €</label>
+<input id="nonfood" type="number" value="0">
 
-    <div class="totali">
-        <p><strong>Totale Incassi:</strong> <span id="totIncassi">0</span> €</p>
-        <p><strong>Totale Spese:</strong> <span id="totSpese">0</span> €</p>
-        <p><strong>Utile Finale:</strong> <span id="utile">0</span> €</p>
-    </div>
+<label>Extra Personale €</label>
+<input id="personale" type="number" value="0">
+</div>
 
-    <script>
-        function calcola() {
-            let contanti = Number(document.getElementById("contanti").value) || 0;
-            let pos = Number(document.getElementById("pos").value) || 0;
-            let satispay = Number(document.getElementById("satispay").value) || 0;
-            let uscite = Number(document.getElementById("uscite").value) || 0;
-            let cassiere = Number(document.getElementById("cassiere").value) || 0;
+<button onclick="calcola()">Calcola Totali Giorno</button>
 
-            let totaleIncassi = contanti + pos + satispay;
-            let totaleSpese = uscite + cassiere;
-            let utile = totaleIncassi - totaleSpese;
+<div class="risultato">
+<p><strong>Totale Incassi:</strong> <span id="totIncassi">0</span> €</p>
+<p><strong>Totale Spese:</strong> <span id="totSpese">0</span> €</p>
+<p><strong>Utile Giornaliero:</strong> <span id="utile">0</span> €</p>
+</div>
 
-            document.getElementById("totIncassi").innerText = totaleIncassi.toFixed(2);
-            document.getElementById("totSpese").innerText = totaleSpese.toFixed(2);
-            document.getElementById("utile").innerText = utile.toFixed(2);
-        }
-    </script>
+<script>
+function calcola() {
+    let contanti = Number(document.getElementById("contanti").value);
+    let pos = Number(document.getElementById("pos").value);
+    let satis = Number(document.getElementById("satis").value);
+
+    let food = Number(document.getElementById("food").value);
+    let nonfood = Number(document.getElementById("nonfood").value);
+    let personale = Number(document.getElementById("personale").value);
+
+    let totIncassi = contanti + pos + satis;
+    let totSpese = food + nonfood + personale;
+    let utile = totIncassi - totSpese;
+
+    document.getElementById("totIncassi").innerText = totIncassi.toFixed(2);
+    document.getElementById("totSpese").innerText = totSpese.toFixed(2);
+    document.getElementById("utile").innerText = utile.toFixed(2);
+}
+</script>
 
 </body>
 </html>
