@@ -6,14 +6,15 @@
 <title>Rosso Dorato – Gestionale</title>
 <style>
 body{font-family:Arial;background:#f6f6f6;padding:15px}
-h1{color:#8b0000}
+h1,h2,h3{color:#8b0000}
 .box{background:#fff;padding:15px;border-radius:8px;margin-bottom:15px}
-input,select{width:100%;padding:8px;margin-top:6px}
+input{width:100%;padding:8px;margin-top:6px}
 button{width:100%;padding:10px;margin-top:8px;font-size:16px;border:none;border-radius:6px}
 .salva{background:#8b0000;color:#fff}
 .chiudi{background:#000;color:#fff}
-.exp{background:#006400;color:#fff}
 .item{background:#eee;padding:6px;margin-top:5px;border-radius:4px}
+.mese{background:#ddd;padding:8px;margin-top:10px;border-radius:6px}
+.giorno{background:#fafafa;padding:6px;margin-top:5px;border-radius:4px}
 </style>
 </head>
 
@@ -22,7 +23,7 @@ button{width:100%;padding:10px;margin-top:8px;font-size:16px;border:none;border-
 <h1>Rosso Dorato – Gestionale</h1>
 
 📅 Data:
-<input type="date" id="dataScelta">
+<input type="date" id="data">
 
 <div class="box">
 <h3>Incassi</h3>
@@ -34,75 +35,107 @@ button{width:100%;padding:10px;margin-top:8px;font-size:16px;border:none;border-
 <div class="box">
 <h3>Spese</h3>
 <input id="food" type="number" placeholder="Spesa Food">
-<input id="fornitoreFood" placeholder="Fornitore Food">
+<input id="forFood" placeholder="Fornitore Food">
 <input id="nonfood" type="number" placeholder="Spesa Non Food">
-<input id="fornitoreNonFood" placeholder="Fornitore Non Food">
+<input id="forNon" placeholder="Fornitore Non Food">
 <input id="personale" type="number" placeholder="Extra personale">
 </div>
 
-<button class="salva" onclick="salvaGiornata()">💾 Salva giornata</button>
+<button class="salva" onclick="salva()">💾 Salva giornata</button>
 <button class="chiudi" onclick="chiudiMese()">🟥 Chiudi mese</button>
 
 <div class="box">
-<strong>Totali mese</strong><br>
+<h3>Mese corrente</h3>
 Incassi: <span id="inc">0</span> €<br>
 Spese: <span id="spe">0</span> €<br>
 Utile: <span id="uti">0</span> €
 </div>
 
 <div class="box">
-<h2>🏪 Spese per fornitore (mese)</h2>
-<div id="fornitori"></div>
+<h2>📊 Storico mesi</h2>
+<div id="storico"></div>
 </div>
 
 <script>
-dataScelta.value=new Date().toISOString().split("T")[0];
+document.getElementById("data").value=new Date().toISOString().split("T")[0];
+
 let giorni=JSON.parse(localStorage.getItem("giorni"))||[];
+let mesi=JSON.parse(localStorage.getItem("mesi"))||[];
 
-function salvaGiornata(){
- let d=new Date(dataScelta.value).toLocaleDateString("it-IT");
- if(giorni.some(g=>g.d===d)){alert("Giornata già inserita");return;}
+function salva(){
+ let d=new Date(data.value).toLocaleDateString("it-IT");
+ if(giorni.some(g=>g.data===d)){alert("Data già inserita");return;}
 
- let inc=+contanti.value + +pos.value + +satis.value;
- let speFood=+food.value;
- let speNonFood=+nonfood.value;
- let spePers=+personale.value;
- let spe=speFood+speNonFood+spePers;
+ let c=+contanti.value||0;
+ let p=+pos.value||0;
+ let s=+satis.value||0;
+ let inc=c+p+s;
+
+ let f=+food.value||0;
+ let nf=+nonfood.value||0;
+ let pers=+personale.value||0;
+ let spe=f+nf+pers;
 
  giorni.push({
-  d,inc,spe,uti:inc-spe,
-  food:{v:speFood,f:fornitoreFood.value},
-  nonfood:{v:speNonFood,f:fornitoreNonFood.value}
+  data:d,
+  incassi:{c,p,s},
+  food:{v:f,f:forFood.value},
+  nonfood:{v:nf,f:forNon.value},
+  personale:pers,
+  totaleInc:inc,
+  totaleSpe:spe,
+  utile:inc-spe
  });
  localStorage.setItem("giorni",JSON.stringify(giorni));
  aggiorna();
 }
 
 function chiudiMese(){
- if(!confirm("Chiudere il mese?"))return;
+ if(!confirm("Chiudere il mese e salvare nello storico?"))return;
+
+ let meseNome=new Date().toISOString().slice(0,7);
+ mesi.push({mese:meseNome,giorni:[...giorni]});
+ localStorage.setItem("mesi",JSON.stringify(mesi));
+
  giorni=[];
  localStorage.setItem("giorni","[]");
  aggiorna();
 }
 
 function aggiorna(){
- let i=0,s=0,u=0;
- let f={};
+ let inc=0,spe=0,uti=0;
  giorni.forEach(g=>{
-  i+=g.inc;s+=g.spe;u+=g.uti;
-  if(g.food.v>0 && g.food.f){
-    f[g.food.f]=(f[g.food.f]||0)+g.food.v;
-  }
-  if(g.nonfood.v>0 && g.nonfood.f){
-    f[g.nonfood.f]=(f[g.nonfood.f]||0)+g.nonfood.v;
-  }
+  inc+=g.totaleInc;
+  spe+=g.totaleSpe;
+  uti+=g.utile;
  });
- inc.innerText=i; spe.innerText=s; uti.innerText=u;
+ document.getElementById("inc").innerText=inc;
+ document.getElementById("spe").innerText=spe;
+ document.getElementById("uti").innerText=uti;
 
  let h="";
- for(let k in f){h+=`<div class="item">${k} → ${f[k]} €</div>`}
- fornitori.innerHTML=h || "Nessuna spesa inserita";
+ mesi.slice().reverse().forEach((m,i)=>{
+  h+=`<div class="mese" onclick="toggle(${i})">
+       ▶ ${m.mese}
+       <div id="m${i}" style="display:none">`;
+  m.giorni.forEach(g=>{
+   h+=`<div class="giorno">
+        <strong>${g.data}</strong><br>
+        Incassi: ${g.totaleInc} €<br>
+        Spese: ${g.totaleSpe} €<br>
+        Utile: ${g.utile} €
+       </div>`;
+  });
+  h+=`</div></div>`;
+ });
+ document.getElementById("storico").innerHTML=h||"Nessun mese chiuso";
 }
+
+function toggle(i){
+ let el=document.getElementById("m"+i);
+ el.style.display=el.style.display==="none"?"block":"none";
+}
+
 aggiorna();
 </script>
 
