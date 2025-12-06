@@ -14,6 +14,7 @@ button{background:#b30000;color:#fff;border:none;border-radius:5px}
 .day{border-bottom:1px solid #ddd;padding:6px}
 .small{font-size:12px;color:#555}
 .total{font-weight:bold;margin-top:10px}
+.fornBlock{margin-top:10px;padding-top:5px;border-top:1px solid #ccc}
 </style>
 </head>
 
@@ -44,13 +45,12 @@ button{background:#b30000;color:#fff;border:none;border-radius:5px}
 <div class="box">
 <h2>Storico</h2>
 <select id="meseSelect" onchange="aggiorna()"></select>
-
 <div id="lista"></div>
 <div id="totaleMese" class="total"></div>
 </div>
 
 <div class="box">
-<h2>Spese per fornitore</h2>
+<h2>Spese per fornitore (dettaglio)</h2>
 <div id="fornitori"></div>
 </div>
 
@@ -63,8 +63,8 @@ let dati = JSON.parse(localStorage.getItem("dati")) || [];
 
 function mesiDisponibili(){
  let mesi=[...new Set(dati.map(d=>d.data.slice(0,7)))].sort().reverse();
- meseSelect.innerHTML=mesi.map(m=>`<option value="${m}">${m}</option>`).join("");
- if(!meseSelect.value && mesi.length) meseSelect.value=mesi[0];
+ meseSelect.innerHTML=mesi.map(m=>`<option>${m}</option>`).join("");
+ if(mesi.length && !meseSelect.value) meseSelect.value=mesi[0];
 }
 
 function salva(){
@@ -91,7 +91,7 @@ function salva(){
 function aggiorna(){
  let mese=meseSelect.value;
  let incT=0, spT=0;
- let forn={};
+ let fornDett={};
 
  lista.innerHTML = dati
  .filter(d=>d.data.startsWith(mese))
@@ -101,26 +101,37 @@ function aggiorna(){
   let sp=g.food+g.non+g.extra;
   incT+=inc; spT+=sp;
 
-  if(g.ffood) forn[g.ffood]=(forn[g.ffood]||0)+g.food;
-  if(g.fnon) forn[g.fnon]=(forn[g.fnon]||0)+g.non;
+  if(g.ffood){
+   fornDett[g.ffood]=fornDett[g.ffood]||[];
+   fornDett[g.ffood].push({d:g.data,t:"Food",v:g.food});
+  }
+  if(g.fnon){
+   fornDett[g.fnon]=fornDett[g.fnon]||[];
+   fornDett[g.fnon].push({d:g.data,t:"Non food",v:g.non});
+  }
 
   return `
   <div class="day">
    <b>${g.data}</b><br>
    Incassi ${inc}€ – Spese ${sp}€ – Utile ${inc-sp}€
-   <div class="small">
-    Food ${g.food}€ (${g.ffood||"-"})<br>
-    Non food ${g.non}€ (${g.fnon||"-"})
-   </div>
   </div>`;
  }).join("");
 
  totaleMese.innerHTML =
   `Totale mese: Incassi ${incT}€ – Spese ${spT}€ – Utile ${incT-spT}€`;
 
- fornitori.innerHTML = Object.keys(forn).length
- ? Object.entries(forn).map(f=>`<div class="day">${f[0]} → ${f[1]}€</div>`).join("")
- : "Nessuna spesa";
+ fornitori.innerHTML = "";
+
+ Object.keys(fornDett).forEach(nome=>{
+  let tot=fornDett[nome].reduce((s,x)=>s+x.v,0);
+  fornitori.innerHTML += `
+  <div class="fornBlock">
+   <b>${nome}</b> (Totale ${tot}€)
+   ${fornDett[nome].map(r=>
+    `<div class="small">- ${r.d} | ${r.t} | ${r.v}€</div>`
+   ).join("")}
+  </div>`;
+ });
 }
 
 function exportCSV(){
