@@ -2,19 +2,40 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Rosso Dorato Asproni</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body{font-family:Arial;background:#f7f7f7;padding:10px}
-h1{text-align:center}
-.box{background:#fff;padding:10px;margin-bottom:15px;border-radius:8px}
-input,select,button{width:100%;padding:8px;margin:5px 0}
-button{background:#b30000;color:#fff;border:none;border-radius:5px}
-.day{border-bottom:1px solid #ddd;padding:6px}
-.small{font-size:12px;color:#555}
-.total{font-weight:bold;margin-top:10px}
-.monthSum{border-bottom:1px solid #ccc;padding:6px}
+body {
+  background:#111;
+  color:#fff;
+  font-family:Arial, sans-serif;
+  padding:20px;
+}
+h1,h2 {
+  text-align:center;
+}
+.card {
+  background:#1e1e1e;
+  padding:15px;
+  border-radius:10px;
+  margin-bottom:20px;
+}
+input, select, button {
+  width:100%;
+  padding:10px;
+  margin:5px 0;
+  border-radius:6px;
+  border:none;
+}
+button {
+  background:#b30000;
+  color:#fff;
+  font-weight:bold;
+}
+.small {
+  font-size:14px;
+  color:#ccc;
+}
 </style>
 </head>
 
@@ -22,143 +43,133 @@ button{background:#b30000;color:#fff;border:none;border-radius:5px}
 
 <h1>🍷 Rosso Dorato Asproni</h1>
 
-<div class="box">
+<div class="card">
 <h2>Inserisci giornata</h2>
 
 <input type="date" id="data">
 
-<input type="number" id="contanti" placeholder="Incassi contanti">
-<input type="number" id="pos" placeholder="Incassi POS">
-<input type="number" id="satis" placeholder="Satispay">
+<input type="number" placeholder="Incassi contanti" id="incassiContanti">
+<input type="number" placeholder="Incassi POS" id="incassiPOS">
+<input type="number" placeholder="Satispay" id="satispay">
 
-<input type="number" id="food" placeholder="Spese food">
-<input id="fornFood" placeholder="Fornitore food">
+<input type="number" placeholder="Spese food" id="speseFood">
+<input type="text" placeholder="Fornitore food" id="fornitoreFood">
+<select id="pagamentoFood">
+  <option value="">Pagamento food</option>
+  <option>Contanti</option>
+  <option>POS</option>
+  <option>Bonifico</option>
+</select>
 
-<input type="number" id="nonfood" placeholder="Spese non food">
-<input id="fornNon" placeholder="Fornitore non food">
+<input type="number" placeholder="Spese non food" id="speseNonFood">
+<input type="text" placeholder="Fornitore non food" id="fornitoreNonFood">
+<select id="pagamentoNonFood">
+  <option value="">Pagamento non food</option>
+  <option>Contanti</option>
+  <option>POS</option>
+  <option>Bonifico</option>
+</select>
 
-<input type="number" id="extra" placeholder="Extra personale">
+<input type="number" placeholder="Extra personale" id="extra">
+<select id="pagamentoExtra">
+  <option value="">Pagamento extra</option>
+  <option>Contanti</option>
+  <option>POS</option>
+  <option>Bonifico</option>
+</select>
 
-<button onclick="salva()">💾 Salva giornata</button>
+<button onclick="salvaGiornata()">💾 Salva giornata</button>
 </div>
 
-<div class="box">
+<div class="card">
 <h2>Storico (mese)</h2>
-<select id="meseSelect" onchange="aggiorna()"></select>
-<div id="lista"></div>
-<div id="totaleMese" class="total"></div>
+<select id="meseSelezionato" onchange="aggiornaStorico()"></select>
+<p id="totali"></p>
 </div>
 
-<div class="box">
+<div class="card">
 <h2>Spese per fornitore (mese)</h2>
 <div id="fornitori"></div>
 </div>
 
-<div class="box">
+<div class="card">
 <h2>📊 Riepilogo fine mese</h2>
-<div id="riepilogoMesi"></div>
+<div id="riepilogo"></div>
 </div>
 
-<div class="box">
-<button onclick="exportCSV()">📤 Esporta dati</button>
-</div>
+<button onclick="esporta()">📤 Esporta dati</button>
 
 <script>
-let dati = JSON.parse(localStorage.getItem("dati")) || [];
+let dati = JSON.parse(localStorage.getItem("gestione")) || {};
 
-function mesiDisponibili(){
- let mesi=[...new Set(dati.map(d=>d.data.slice(0,7)))].sort().reverse();
- meseSelect.innerHTML=mesi.map(m=>`<option>${m}</option>`).join("");
- if(mesi.length && !meseSelect.value) meseSelect.value=mesi[0];
+function salvaGiornata() {
+  const d = document.getElementById("data").value;
+  if(!d) return alert("Inserisci la data");
+
+  const mese = d.slice(0,7);
+  if(!dati[mese]) dati[mese] = { giorni:[] };
+
+  dati[mese].giorni.push({
+    data:d,
+    incassi:{
+      contanti:+incassiContanti.value||0,
+      pos:+incassiPOS.value||0,
+      satispay:+satispay.value||0
+    },
+    spese:[
+      {tipo:"food", importo:+speseFood.value||0, fornitore:fornitoreFood.value, pagamento:pagamentoFood.value},
+      {tipo:"nonfood", importo:+speseNonFood.value||0, fornitore:fornitoreNonFood.value, pagamento:pagamentoNonFood.value},
+      {tipo:"extra", importo:+extra.value||0, pagamento:pagamentoExtra.value}
+    ]
+  });
+
+  localStorage.setItem("gestione",JSON.stringify(dati));
+  alert("Giornata salvata ✅");
+  aggiornaMesi();
 }
 
-function salva(){
- if(!data.value) return alert("Seleziona la data");
- if(dati.find(d=>d.data==data.value)) return alert("Giorno già inserito");
-
- dati.push({
-  data:data.value,
-  cont:+contanti.value||0,
-  pos:+pos.value||0,
-  sat:+satis.value||0,
-  food:+food.value||0,
-  ffood:fornFood.value,
-  non:+nonfood.value||0,
-  fnon:fornNon.value,
-  extra:+extra.value||0
- });
-
- localStorage.setItem("dati", JSON.stringify(dati));
- mesiDisponibili();
- aggiorna();
- riepilogoFineMese();
+function aggiornaMesi() {
+  const sel = meseSelezionato;
+  sel.innerHTML="";
+  for(let m in dati) {
+    sel.innerHTML += `<option value="${m}">${m}</option>`;
+  }
+  aggiornaStorico();
 }
 
-function aggiorna(){
- let mese=meseSelect.value;
- let incT=0, spT=0;
- let forn={};
+function aggiornaStorico() {
+  const m = meseSelezionato.value;
+  if(!m) return;
+  let inc=0, sp=0, forn={};
 
- lista.innerHTML = dati
- .filter(d=>d.data.startsWith(mese))
- .sort((a,b)=>b.data.localeCompare(a.data))
- .map(g=>{
-  let inc=g.cont+g.pos+g.sat;
-  let sp=g.food+g.non+g.extra;
-  incT+=inc; spT+=sp;
+  dati[m].giorni.forEach(g=>{
+    inc += g.incassi.contanti + g.incassi.pos + g.incassi.satispay;
+    g.spese.forEach(s=>{
+      sp += s.importo;
+      if(s.fornitore){
+        forn[s.fornitore]=(forn[s.fornitore]||0)+s.importo;
+      }
+    });
+  });
 
-  if(g.ffood) forn[g.ffood]=(forn[g.ffood]||0)+g.food;
-  if(g.fnon) forn[g.fnon]=(forn[g.fnon]||0)+g.non;
+  totali.innerHTML = `Totale mese: Incassi €${inc.toFixed(2)} – Spese €${sp.toFixed(2)} – Utile €${(inc-sp).toFixed(2)}`;
 
-  return `
-  <div class="day">
-   <b>${g.data}</b><br>
-   Incassi ${inc}€ – Spese ${sp}€ – Utile ${inc-sp}€
-  </div>`;
- }).join("");
+  fornitori.innerHTML="";
+  for(let f in forn){
+    fornitori.innerHTML += `<div class="small">${f}: €${forn[f].toFixed(2)}</div>`;
+  }
 
- totaleMese.innerHTML =
-  `Totale mese: Incassi ${incT}€ – Spese ${spT}€ – Utile ${incT-spT}€`;
-
- fornitori.innerHTML = Object.keys(forn).length
- ? Object.entries(forn).map(f=>`<div class="day">${f[0]} → ${f[1]}€</div>`).join("")
- : "Nessuna spesa";
+  riepilogo.innerHTML = `<b>${m}</b><br>Incassi: €${inc.toFixed(2)}<br>Spese: €${sp.toFixed(2)}<br>Utile: €${(inc-sp).toFixed(2)}`;
 }
 
-function riepilogoFineMese(){
- let mappa={};
-
- dati.forEach(g=>{
-  let m=g.data.slice(0,7);
-  if(!mappa[m]) mappa[m]={inc:0,sp:0};
-  mappa[m].inc+=g.cont+g.pos+g.sat;
-  mappa[m].sp+=g.food+g.non+g.extra;
- });
-
- riepilogoMesi.innerHTML = Object.keys(mappa)
- .sort().map(m=>{
-  let u=mappa[m].inc-mappa[m].sp;
-  return `
-  <div class="monthSum">
-   <b>${m}</b> → Incassi ${mappa[m].inc}€ | Spese ${mappa[m].sp}€ | Utile ${u}€
-  </div>`;
- }).join("");
+function esporta() {
+  const a=document.createElement("a");
+  a.href="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(dati,null,2));
+  a.download="rosso_dorato_dati.json";
+  a.click();
 }
 
-function exportCSV(){
- let csv="Data,Contanti,POS,Satispay,Food,FornFood,NonFood,FornNon,Extra\n";
- dati.forEach(g=>{
-  csv+=`${g.data},${g.cont},${g.pos},${g.sat},${g.food},${g.ffood},${g.non},${g.fnon},${g.extra}\n`;
- });
- let a=document.createElement("a");
- a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
- a.download="rosso_dorato.csv";
- a.click();
-}
-
-mesiDisponibili();
-aggiorna();
-riepilogoFineMese();
+aggiornaMesi();
 </script>
 
 </body>
