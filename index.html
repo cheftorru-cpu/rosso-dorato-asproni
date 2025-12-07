@@ -5,16 +5,78 @@
 <title>Rosso Dorato Asproni</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body{background:#111;color:#eee;font-family:system-ui;padding:15px}
-h1{text-align:center}
-h2{margin-top:25px}
-.card{background:#1c1c1c;border-radius:12px;padding:15px;margin-bottom:15px}
-.day{border:1px solid #333;border-radius:10px;padding:10px;margin:8px 0}
-.row{display:flex;justify-content:space-between;align-items:center}
-.trash{background:#333;border:none;border-radius:6px;padding:4px 8px;font-size:12px}
-.small{color:#bbb;font-size:14px}
-input,button{width:100%;padding:10px;margin:5px 0;border-radius:8px;border:none}
-button{background:#b11218;color:#fff;font-weight:600}
+body{
+  background:#111;
+  color:#eee;
+  font-family:system-ui, Arial;
+  padding:15px;
+}
+h1{text-align:center;margin-bottom:20px}
+.card{
+  background:#1c1c1c;
+  border-radius:12px;
+  padding:15px;
+  margin-bottom:15px;
+}
+input,select,button{
+  width:100%;
+  padding:10px;
+  margin:6px 0;
+  border:none;
+  border-radius:8px;
+  font-size:15px;
+}
+button{
+  background:#b11218;
+  color:#fff;
+  font-weight:600;
+}
+button.secondary{
+  background:#333;
+}
+.day-card{
+  border:1px solid #333;
+  border-radius:10px;
+  padding:10px;
+  margin-bottom:10px;
+}
+.day-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.trash{
+  background:#333;
+  border:none;
+  border-radius:6px;
+  padding:4px 8px;
+  font-size:12px;
+}
+.small{font-size:14px;color:#bbb}
+
+.modal{
+  display:none;
+  position:fixed;
+  top:0;left:0;
+  width:100%;height:100%;
+  background:rgba(0,0,0,.7);
+  justify-content:center;
+  align-items:center;
+  z-index:10;
+}
+.modal-box{
+  background:#1c1c1c;
+  width:90%;
+  max-width:420px;
+  padding:15px;
+  border-radius:12px;
+}
+.list-item{
+  display:flex;
+  justify-content:space-between;
+  font-size:14px;
+  margin-top:5px;
+}
 </style>
 </head>
 
@@ -24,74 +86,145 @@ button{background:#b11218;color:#fff;font-weight:600}
 
 <div class="card">
 <h2>Nuova giornata</h2>
+
 <input type="date" id="data">
-<input type="number" placeholder="Incassi contanti" id="incC">
-<input type="number" placeholder="Incassi POS" id="incP">
-<input type="number" placeholder="Sardex" id="incS">
-<button onclick="salva()">💾 Salva giornata</button>
+<input type="number" id="incC" placeholder="Incassi contanti">
+<input type="number" id="incP" placeholder="Incassi POS">
+<input type="number" id="incS" placeholder="Sardex">
+
+<button onclick="openModal('food')">➕ Spesa Food</button>
+<button onclick="openModal('nonfood')">➕ Spesa Non Food</button>
+<button onclick="openModal('extra')">➕ Extra</button>
+<button onclick="openModal('acconti')">➕ Acconto Personale</button>
+
+<button onclick="salva()">💾 Salva Giornata</button>
 </div>
 
 <div class="card">
 <h2>Storico</h2>
+<select id="mese" onchange="mostraStorico()"></select>
 <div id="storico"></div>
+<div id="totali" class="small"></div>
+</div>
+
+<!-- MODALE -->
+<div class="modal" id="modal">
+<div class="modal-box">
+<h3 id="modTit"></h3>
+
+<input type="number" id="mImporto" placeholder="Importo">
+<input type="text" id="mNome" placeholder="Nome / Fornitore / Personale">
+<select id="mPag">
+<option>Contanti</option>
+<option>POS</option>
+<option>Bonifico</option>
+</select>
+
+<button onclick="addVoce()">Aggiungi</button>
+<div id="lista"></div>
+<button class="secondary" onclick="closeModal()">Chiudi</button>
+</div>
 </div>
 
 <script>
 let db = JSON.parse(localStorage.getItem("rd")) || {};
+let buffer = {food:[], nonfood:[], extra:[], acconti:[]};
+let tipo = "";
 
-function salva() {
-  if (!data.value) return alert("Inserisci la data");
-  let mese = data.value.slice(0,7);
-  if (!db[mese]) db[mese] = [];
-  db[mese].push({
-    data: data.value,
-    inc: (+incC.value||0)+(+incP.value||0)+(+incS.value||0)
-  });
-  localStorage.setItem("rd", JSON.stringify(db));
-  backup();
-  caricaStorico();
-  alert("Salvato ✅");
+function openModal(t){
+  tipo=t;
+  modTit.innerText="Aggiungi "+t;
+  modal.style.display="flex";
+  render();
+}
+function closeModal(){modal.style.display="none"}
+
+function addVoce(){
+  if(+mImporto.value<=0) return;
+  buffer[tipo].push({i:+mImporto.value,n:mNome.value,p:mPag.value});
+  mImporto.value=""; mNome.value="";
+  render();
+}
+function render(){
+  lista.innerHTML="";
+  buffer[tipo].forEach((v,i)=>{
+    lista.innerHTML+=`
+    <div class="list-item">
+      <span>€${v.i} - ${v.n}</span>
+      <span onclick="buffer[tipo].splice(${i},1);render()">❌</span>
+    </div>`;
+  })
 }
 
-function caricaStorico() {
-  storico.innerHTML = "";
-  let mesi = Object.keys(db).sort().reverse();
-  mesi.forEach(m=>{
-    let titolo = document.createElement("h2");
-    titolo.innerText = m;
-    storico.appendChild(titolo);
+function salva(){
+  if(!data.value) return alert("Inserisci la data");
+  let m=data.value.slice(0,7);
+  if(!db[m]) db[m]=[];
 
-    db[m].slice().reverse().forEach((g,i)=>{
-      let d = document.createElement("div");
-      d.className="day";
-      d.innerHTML=`
-        <div class="row">
-          <strong>${g.data}</strong>
-          <button class="trash" onclick="delG('${m}',${db[m].length-1-i})">🗑</button>
-        </div>
-        <div class="small">Incassi €${g.inc}</div>`;
-      storico.appendChild(d);
-    });
+  db[m].push({
+    data:data.value,
+    inc:+incC.value + +incP.value + +incS.value,
+    food:buffer.food,
+    nonfood:buffer.nonfood,
+    extra:buffer.extra,
+    acconti:buffer.acconti
   });
+
+  localStorage.setItem("rd",JSON.stringify(db));
+  backup();
+  buffer={food:[],nonfood:[],extra:[],acconti:[]};
+  aggiornaMesi();
+  alert("Giornata salvata ✅");
 }
 
-function delG(m,i){
-  if(!confirm("Eliminare giornata?"))return;
-  db[m].splice(i,1);
-  if(db[m].length==0) delete db[m];
-  localStorage.setItem("rd", JSON.stringify(db));
+function aggiornaMesi(){
+  mese.innerHTML="";
+  Object.keys(db).forEach(m=>mese.innerHTML+=`<option>${m}</option>`);
+  mostraStorico();
+}
+
+function mostraStorico(){
+  let m=mese.value;
+  if(!m) return;
+  let html="", inc=0, sp=0, acc=0;
+
+  db[m].forEach((g,i)=>{
+    let s=0;
+    [...g.food,...g.nonfood,...g.extra].forEach(x=>s+=x.i);
+    g.acconti.forEach(a=>acc+=a.i);
+    inc+=g.inc; sp+=s;
+
+    html+=`
+    <div class="day-card">
+      <div class="day-header">
+        <strong>${g.data}</strong>
+        <button class="trash" onclick="delG(${i})">🗑</button>
+      </div>
+      <div class="small">Incassi €${g.inc} – Spese €${s} – Utile €${g.inc-s}</div>
+    </div>`;
+  });
+
+  storico.innerHTML=html;
+  totali.innerText=`Mese: Incassi €${inc} – Spese €${sp} – Acconti €${acc} – Utile €${inc-sp}`;
+}
+
+function delG(i){
+  if(!confirm("Eliminare la giornata?")) return;
+  db[mese.value].splice(i,1);
+  localStorage.setItem("rd",JSON.stringify(db));
   backup();
-  caricaStorico();
+  mostraStorico();
 }
 
 function backup(){
+  let d=new Date().toISOString().slice(0,10);
   let a=document.createElement("a");
   a.href="data:text/json,"+encodeURIComponent(JSON.stringify(db));
-  a.download="backup-rosso-dorato.json";
+  a.download=`backup-rosso-dorato-${d}.json`;
   a.click();
 }
 
-caricaStorico();
+aggiornaMesi();
 </script>
 
 </body>
