@@ -4,130 +4,38 @@
 <meta charset="UTF-8">
 <title>Rosso Dorato Asproni</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <style>
-body{
-  background:#111;
-  color:#eee;
-  font-family:system-ui, Arial;
-  padding:15px;
-}
+body{background:#111;color:#eee;font-family:system-ui,Arial;padding:15px}
 h1{text-align:center;margin-bottom:20px}
-
-.card{
-  background:#1c1c1c;
-  border-radius:12px;
-  padding:15px;
-  margin-bottom:15px;
-}
-
-input,select,button{
-  width:100%;
-  padding:10px;
-  margin:6px 0;
-  border:none;
-  border-radius:8px;
-  font-size:15px;
-}
-
-button{
-  background:#b11218;
-  color:#fff;
-  font-weight:600;
-}
-button.secondary{ background:#333; }
-
-.month-card{
-  border:1px solid #333;
-  border-radius:10px;
-  margin-bottom:12px;
-  overflow:hidden;
-}
-
-.month-header{
-  padding:12px;
-  font-weight:600;
-  cursor:pointer;
-  background:#222;
-}
-
-.month-body{ display:none; padding:10px; }
-
-.day-card{
-  border:1px solid #333;
-  border-radius:8px;
-  margin-bottom:8px;
-  overflow:hidden;
-}
-
-.day-header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:8px;
-  cursor:pointer;
-}
-
-.day-body{
-  display:none;
-  padding:8px;
-  border-top:1px solid #333;
-}
-
-.trash{
-  background:#333;
-  border:none;
-  border-radius:6px;
-  padding:4px 8px;
-  font-size:12px;
-}
-
-.small{ font-size:14px;color:#bbb }
-
-.modal{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.7);
-  justify-content:center;
-  align-items:center;
-  z-index:10;
-}
-
-.modal-box{
-  background:#1c1c1c;
-  width:90%;
-  max-width:420px;
-  padding:15px;
-  border-radius:12px;
-}
-
-.list-item{
-  display:flex;
-  justify-content:space-between;
-  margin-top:5px;
-  font-size:14px;
-}
+.card{background:#1c1c1c;border-radius:12px;padding:15px;margin-bottom:15px}
+input,select,button{width:100%;padding:10px;margin:6px 0;border:none;border-radius:8px}
+button{background:#b11218;color:#fff;font-weight:600}
+button.secondary{background:#333}
+.month-card,.day-card{border:1px solid #333;border-radius:10px;margin-bottom:10px;overflow:hidden}
+.month-header,.day-header{padding:10px;cursor:pointer;background:#222;display:flex;justify-content:space-between}
+.month-body,.day-body{display:none;padding:10px}
+.trash{background:#333;border:none;border-radius:6px;padding:4px 8px;font-size:12px}
+.small{font-size:14px;color:#bbb}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);justify-content:center;align-items:center}
+.modal-box{background:#1c1c1c;width:90%;max-width:420px;padding:15px;border-radius:12px}
+.list-item{display:flex;justify-content:space-between;font-size:14px;margin-top:4px}
+.sep{margin-top:8px;border-top:1px dashed #444;padding-top:6px}
 </style>
 </head>
 
 <body>
-
 <h1>🍷 Rosso Dorato Asproni</h1>
 
 <div class="card">
 <h2>Nuova giornata</h2>
-
 <input type="date" id="data">
 <input type="number" id="incC" placeholder="Incassi contanti">
 <input type="number" id="incP" placeholder="Incassi POS">
 <input type="number" id="incS" placeholder="Sardex">
-
 <button onclick="openModal('food')">➕ Spesa Food</button>
 <button onclick="openModal('nonfood')">➕ Spesa Non Food</button>
 <button onclick="openModal('extra')">➕ Extra</button>
 <button onclick="openModal('acconti')">➕ Acconto Personale</button>
-
 <button onclick="salva()">💾 Salva Giornata</button>
 </div>
 
@@ -136,50 +44,41 @@ button.secondary{ background:#333; }
 <div id="storico"></div>
 </div>
 
-<!-- MODALE -->
 <div class="modal" id="modal">
-  <div class="modal-box">
-    <h3 id="modTit"></h3>
-    <input type="number" id="mImporto" placeholder="Importo">
-    <input type="text" id="mNome" placeholder="Nome / Fornitore / Personale">
-    <select id="mPag">
-      <option>Contanti</option>
-      <option>POS</option>
-      <option>Bonifico</option>
-    </select>
-    <button onclick="addVoce()">Aggiungi</button>
-    <div id="lista"></div>
-    <button class="secondary" onclick="closeModal()">Chiudi</button>
-  </div>
+<div class="modal-box">
+<h3 id="modTit"></h3>
+<input type="number" id="mImporto" placeholder="Importo">
+<input type="text" id="mNome" placeholder="Nome / Fornitore / Personale">
+<select id="mPag">
+<option>Contanti</option>
+<option>POS</option>
+<option>Bonifico</option>
+</select>
+<button onclick="addVoce()">Aggiungi</button>
+<div id="lista"></div>
+<button class="secondary" onclick="closeModal()">Chiudi</button>
+</div>
 </div>
 
 <script>
-let db = JSON.parse(localStorage.getItem("rd")) || {};
-let buffer = {food:[],nonfood:[],extra:[],acconti:[]};
+let db=JSON.parse(localStorage.getItem("rd"))||{};
+let buffer={food:[],nonfood:[],extra:[],acconti:[]};
 let tipo="";
 
-function openModal(t){
-  tipo=t;
-  modTit.innerText="Aggiungi "+t;
-  modal.style.display="flex";
-  render();
-}
-function closeModal(){ modal.style.display="none"; }
-
+function openModal(t){tipo=t;modTit.innerText="Aggiungi "+t;modal.style.display="flex";render()}
+function closeModal(){modal.style.display="none"}
 function addVoce(){
   if(+mImporto.value<=0) return;
   buffer[tipo].push({i:+mImporto.value,n:mNome.value,p:mPag.value});
-  mImporto.value=""; mNome.value="";
-  render();
+  mImporto.value="";mNome.value="";render();
 }
 function render(){
   lista.innerHTML="";
   buffer[tipo].forEach((v,i)=>{
-    lista.innerHTML+=`
-      <div class="list-item">
-        <span>€${v.i} - ${v.n}</span>
-        <span onclick="buffer[tipo].splice(${i},1);render()">❌</span>
-      </div>`;
+    lista.innerHTML+=`<div class="list-item">
+      <span>€${v.i} - ${v.n}</span>
+      <span onclick="buffer[tipo].splice(${i},1);render()">❌</span>
+    </div>`;
   });
 }
 
@@ -189,80 +88,66 @@ function salva(){
   if(!db[m]) db[m]=[];
   db[m].push({
     data:data.value,
-    inc:+incC.value + +incP.value + +incS.value,
-    food:buffer.food,
-    nonfood:buffer.nonfood,
-    extra:buffer.extra,
-    acconti:buffer.acconti
+    inc:+incC.value+ +incP.value+ +incS.value,
+    food:[...buffer.food],
+    nonfood:[...buffer.nonfood],
+    extra:[...buffer.extra],
+    acconti:[...buffer.acconti]
   });
   localStorage.setItem("rd",JSON.stringify(db));
-  backup();
   buffer={food:[],nonfood:[],extra:[],acconti:[]};
   mostraStorico();
 }
 
-function toggle(el){ el.style.display=el.style.display==="block"?"none":"block"; }
+function toggle(el){el.style.display=el.style.display==="block"?"none":"block"}
+
+function blocco(tit,arr){
+  let tot=0,html="";
+  arr.forEach(v=>{tot+=v.i;html+=`<div class="list-item">€${v.i} - ${v.n}</div>`});
+  return `<div class="sep"><strong>${tit} €${tot}</strong>${html}</div>`;
+}
 
 function mostraStorico(){
   let html="";
   Object.keys(db).sort().reverse().forEach((m,mi)=>{
-    let inc=0,sp=0,acc=0;
-    let giorni="";
+    let inc=0,spF=0,spN=0,spE=0,acc=0,days="";
     db[m].forEach((g,i)=>{
-      let s=0;
-      [...g.food,...g.nonfood,...g.extra].forEach(x=>s+=x.i);
-      g.acconti.forEach(a=>acc+=a.i);
-      inc+=g.inc; sp+=s;
+      g.food.forEach(x=>spF+=x.i);
+      g.nonfood.forEach(x=>spN+=x.i);
+      g.extra.forEach(x=>spE+=x.i);
+      g.acconti.forEach(x=>acc+=x.i);
+      inc+=g.inc;
 
-      giorni+=`
+      days+=`
       <div class="day-card">
         <div class="day-header" onclick="toggle(document.getElementById('d${mi}_${i}'))">
-          <strong>${formattaData(g.data)}</strong>
-          <button class="trash" onclick="event.stopPropagation();delG('${m}',${i})">🗑</button>
+          ${formattaData(g.data)} <span>€ ${g.inc}</span>
         </div>
         <div class="day-body" id="d${mi}_${i}">
-          <div class="small">
-            Incassi €${g.inc}<br>
-            Spese €${s}<br>
-            Acconti €${g.acconti.reduce((t,a)=>t+a.i,0)}<br>
-            <strong>Utile €${g.inc-s}</strong>
-          </div>
+          ${blocco("Food",g.food)}
+          ${blocco("Non Food",g.nonfood)}
+          ${blocco("Extra",g.extra)}
+          ${blocco("Acconti",g.acconti)}
         </div>
       </div>`;
     });
 
+    let spTot=spF+spN+spE;
     html+=`
     <div class="month-card">
       <div class="month-header" onclick="toggle(document.getElementById('m${mi}'))">
-        ${m} — Incassi €${inc} | Utile €${inc-sp}
+        ${m} — Inc €${inc} | Sp €${spTot} | Acc €${acc}
       </div>
-      <div class="month-body" id="m${mi}">${giorni}</div>
+      <div class="month-body" id="m${mi}">${days}</div>
     </div>`;
   });
   storico.innerHTML=html;
 }
 
-function delG(m,i){
-  if(!confirm("Eliminare giornata?")) return;
-  db[m].splice(i,1);
-  localStorage.setItem("rd",JSON.stringify(db));
-  backup();
-  mostraStorico();
-}
-
-function backup(){
-  let d=new Date().toISOString().slice(0,10);
-  let a=document.createElement("a");
-  a.href="data:text/json,"+encodeURIComponent(JSON.stringify(db));
-  a.download=`backup-rosso-dorato-${d}.json`;
-  a.click();
-}
-
 function formattaData(d){
-  const x=new Date(d);
-  return `${String(x.getDate()).padStart(2,'0')}/${String(x.getMonth()+1).padStart(2,'0')}/${x.getFullYear()}`;
+  let x=new Date(d);
+  return `${String(x.getDate()).padStart(2,'0')}/${String(x.getMonth()+1).padStart(2,'0')}/${x.getFullYear()}`
 }
-
 mostraStorico();
 </script>
 </body>
