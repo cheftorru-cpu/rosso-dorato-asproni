@@ -20,6 +20,8 @@ button.secondary{background:#333}
 .modal-box{background:#1c1c1c;border-radius:12px;padding:15px;width:90%;max-width:420px}
 .list-item{display:flex;justify-content:space-between;font-size:14px;margin-top:4px}
 .sep{margin-top:8px;border-top:1px dashed #444;padding-top:6px}
+.tot-header{cursor:pointer;font-weight:600}
+.tot-body{display:none;padding-left:10px}
 </style>
 </head>
 
@@ -92,20 +94,81 @@ function salva(){
   if(!data.value) return alert("Inserisci la data");
   let m=data.value.slice(0,7);
   if(!db[m]) db[m]=[];
+
+  let c=+incC.value||0;
+  let p=+incP.value||0;
+  let s=+incS.value||0;
+
   db[m].push({
     data:data.value,
-    inc:+incC.value + +incP.value + +incS.value,
+    contanti:c,
+    pos:p,
+    sardex:s,
+    inc:c+p+s,
     food:[...buffer.food],
     nonfood:[...buffer.nonfood],
     extra:[...buffer.extra],
     acconti:[...buffer.acconti]
   });
+
   localStorage.setItem("rd",JSON.stringify(db));
   buffer={food:[],nonfood:[],extra:[],acconti:[]};
   mostraStorico();
 }
 
 function toggle(el){ el.style.display = el.style.display==="block"?"none":"block"; }
+
+function sommaPerNome(arr,map){ arr.forEach(v=> map[v.n]=(map[v.n]||0)+v.i ); }
+
+function bloccoTot(id,t,o){
+  let s=0,h="";
+  Object.keys(o).forEach(k=>{
+    s+=o[k];
+    h+=`<div>• ${k}: €${o[k]}</div>`;
+  });
+  return `
+  <div class="sep">
+    <div class="tot-header" onclick="toggle(document.getElementById('${id}'))">
+      ${t} €${s}
+    </div>
+    <div class="tot-body" id="${id}">${h}</div>
+  </div>`;
+}
+
+function riepilogoMese(){
+  let m=selMese.value;
+  if(!db[m]) return;
+
+  let tot={food:{},nonfood:{},extra:{},acconti:{}};
+  let inc=0,c=0,p=0,s=0;
+
+  db[m].forEach(g=>{
+    inc+=g.inc;
+    c+=g.contanti;
+    p+=g.pos;
+    s+=g.sardex;
+    sommaPerNome(g.food,tot.food);
+    sommaPerNome(g.nonfood,tot.nonfood);
+    sommaPerNome(g.extra,tot.extra);
+    sommaPerNome(g.acconti,tot.acconti);
+  });
+
+  let sp=[
+    ...Object.values(tot.food),
+    ...Object.values(tot.nonfood),
+    ...Object.values(tot.extra)
+  ].reduce((a,b)=>a+b,0);
+
+  boxRiepilogo.innerHTML=`
+    <strong>Incassi Totali €${inc}</strong>
+    ${bloccoTot("inc","Dettaglio incassi",{Contanti:c,POS:p,Sardex:s})}
+    ${bloccoTot("f","Food",tot.food)}
+    ${bloccoTot("nf","Non Food",tot.nonfood)}
+    ${bloccoTot("e","Extra",tot.extra)}
+    ${bloccoTot("a","Acconti",tot.acconti)}
+    <div class="sep"><strong>Utile €${inc-sp}</strong></div>
+  `;
+}
 
 function mostraStorico(){
   let html="";
@@ -135,44 +198,6 @@ function mostraStorico(){
   storico.innerHTML=html;
   selMese.innerHTML = Object.keys(db).sort().reverse().map(m=>`<option>${m}</option>`).join("");
   riepilogoMese();
-}
-
-function sommaPerNome(arr,map){ arr.forEach(v=> map[v.n]=(map[v.n]||0)+v.i ); }
-
-function riepilogoMese(){
-  let m=selMese.value;
-  if(!db[m]) return;
-
-  let tot={food:{},nonfood:{},extra:{},acconti:{}};
-  let inc=0;
-
-  db[m].forEach(g=>{
-    inc+=g.inc;
-    sommaPerNome(g.food,tot.food);
-    sommaPerNome(g.nonfood,tot.nonfood);
-    sommaPerNome(g.extra,tot.extra);
-    sommaPerNome(g.acconti,tot.acconti);
-  });
-
-  function bloccoTot(t,o){
-    let s=0,h="";
-    Object.keys(o).forEach(k=>{s+=o[k];h+=`<div>• ${k}: €${o[k]}</div>`});
-    return `<div class="sep"><strong>${t} €${s}</strong>${h}</div>`;
-  }
-
-  let sp=
-    Object.values(tot.food).reduce((a,b)=>a+b,0)+
-    Object.values(tot.nonfood).reduce((a,b)=>a+b,0)+
-    Object.values(tot.extra).reduce((a,b)=>a+b,0);
-
-  boxRiepilogo.innerHTML=`
-    <strong>Incassi €${inc}</strong>
-    ${bloccoTot("Food",tot.food)}
-    ${bloccoTot("Non Food",tot.nonfood)}
-    ${bloccoTot("Extra",tot.extra)}
-    ${bloccoTot("Acconti",tot.acconti)}
-    <div class="sep"><strong>Utile €${inc-sp}</strong></div>
-  `;
 }
 
 function blocco(t,a){
