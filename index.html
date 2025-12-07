@@ -10,8 +10,26 @@ h1,h2,h3{text-align:center}
 .card{background:#1e1e1e;padding:15px;border-radius:10px;margin-bottom:20px}
 input,select,button{width:100%;padding:10px;margin:4px 0;border-radius:6px;border:none}
 button{background:#b30000;color:#fff;font-weight:bold}
-.row{border:1px solid #333;padding:8px;margin-top:6px;border-radius:6px}
 .small{font-size:14px;color:#ccc}
+
+/* MODALE */
+.modal{
+display:none;
+position:fixed;
+top:0;left:0;
+width:100%;height:100%;
+background:rgba(0,0,0,.8);
+align-items:center;
+justify-content:center;
+z-index:10
+}
+.modalContent{
+background:#1e1e1e;
+padding:15px;
+border-radius:10px;
+width:90%;
+max-width:400px
+}
 </style>
 </head>
 
@@ -29,22 +47,18 @@ button{background:#b30000;color:#fff;font-weight:bold}
 <input type="number" placeholder="Satispay" id="incS">
 
 <h3>Spese food</h3>
-<div id="food"></div>
-<button type="button" onclick="addRow('food','Fornitore food')">➕ Aggiungi food</button>
+<button onclick="openModal('food')">➕ Aggiungi food</button>
 
 <h3>Spese non food</h3>
-<div id="nonfood"></div>
-<button type="button" onclick="addRow('nonfood','Fornitore non food')">➕ Aggiungi non food</button>
+<button onclick="openModal('nonfood')">➕ Aggiungi non food</button>
 
 <h3>Extra personale</h3>
-<div id="extra"></div>
-<button type="button" onclick="addRow('extra','Nome personale')">➕ Aggiungi extra</button>
+<button onclick="openModal('extra')">➕ Aggiungi extra</button>
 
 <h3>Acconti al personale</h3>
-<div id="acconti"></div>
-<button type="button" onclick="addRow('acconti','Nome dipendente')">➕ Aggiungi acconto</button>
+<button onclick="openModal('acconti')">➕ Aggiungi acconto</button>
 
-<button type="button" onclick="salva()">💾 Salva giornata</button>
+<button onclick="salva()">💾 Salva giornata</button>
 </div>
 
 <div class="card">
@@ -54,98 +68,102 @@ button{background:#b30000;color:#fff;font-weight:bold}
 <div id="dettagli"></div>
 </div>
 
-<button type="button" onclick="exportData()">📤 Esporta dati</button>
+<button onclick="exportData()">📤 Esporta dati</button>
+
+<!-- MODALE -->
+<div class="modal" id="modal">
+<div class="modalContent">
+<h3 id="modalTitle"></h3>
+<input type="number" id="mImporto" placeholder="Importo">
+<input type="text" id="mNome" placeholder="Nome">
+<select id="mPag">
+<option>Contanti</option>
+<option>POS</option>
+<option>Bonifico</option>
+</select>
+<button onclick="saveModal()">Salva voce</button>
+<button onclick="closeModal()">Annulla</button>
+</div>
+</div>
 
 <script>
-let dati = JSON.parse(localStorage.getItem("rd")) || {}
+let dati=JSON.parse(localStorage.getItem("rd"))||{}
+let buffer={food:[],nonfood:[],extra:[],acconti:[]}
+let tipoCorrente=""
 
-function addRow(containerId, placeholder){
-  const div = document.createElement("div")
-  div.className = "row"
-  div.innerHTML = `
-    <input type="number" placeholder="Importo">
-    <input type="text" placeholder="${placeholder}">
-    <select>
-      <option>Contanti</option>
-      <option>POS</option>
-      <option>Bonifico</option>
-    </select>`
-  document.getElementById(containerId).appendChild(div)
+function openModal(tipo){
+tipoCorrente=tipo
+modal.style.display="flex"
+modalTitle.innerText="Aggiungi "+tipo
+mImporto.value=""
+mNome.value=""
 }
 
-// riga iniziale
-addRow('food','Fornitore food')
-addRow('nonfood','Fornitore non food')
-addRow('extra','Nome personale')
-addRow('acconti','Nome dipendente')
+function closeModal(){
+modal.style.display="none"
+}
 
-function leggi(id){
-  let arr=[]
-  document.querySelectorAll(`#${id} .row`).forEach(r=>{
-    let i=+r.children[0].value||0
-    let n=r.children[1].value
-    let p=r.children[2].value
-    if(i>0) arr.push({i,n,p})
-  })
-  return arr
+function saveModal(){
+let i=+mImporto.value||0
+if(i<=0)return alert("Importo mancante")
+buffer[tipoCorrente].push({i,n:mNome.value,p:mPag.value})
+closeModal()
 }
 
 function salva(){
-  let d=data.value
-  if(!d) return alert("Inserisci la data")
-  let m=d.slice(0,7)
-  if(!dati[m]) dati[m]=[]
+let d=data.value
+if(!d)return alert("Inserisci data")
+let m=d.slice(0,7)
+if(!dati[m])dati[m]=[]
 
-  dati[m].push({
-    data:d,
-    inc:+incC.value + +incP.value + +incS.value,
-    food:leggi("food"),
-    nonfood:leggi("nonfood"),
-    extra:leggi("extra"),
-    acconti:leggi("acconti")
-  })
+dati[m].push({
+data:d,
+inc:+incC.value + +incP.value + +incS.value,
+food:buffer.food,
+nonfood:buffer.nonfood,
+extra:buffer.extra,
+acconti:buffer.acconti
+})
 
-  localStorage.setItem("rd",JSON.stringify(dati))
-  alert("Giornata salvata ✅")
-  aggiornaMesi()
+buffer={food:[],nonfood:[],extra:[],acconti:[]}
+localStorage.setItem("rd",JSON.stringify(dati))
+alert("Giornata salvata ✅")
+aggiornaMesi()
 }
 
 function aggiornaMesi(){
-  mese.innerHTML=""
-  for(let m in dati) mese.innerHTML+=`<option>${m}</option>`
-  storico()
+mese.innerHTML=""
+for(let m in dati)mese.innerHTML+=`<option>${m}</option>`
+storico()
 }
 
 function storico(){
-  let m=mese.value
-  if(!m) return
-  let inc=0,sp=0,acc=0,map={}
+let m=mese.value
+if(!m)return
+let inc=0,sp=0,acc=0,map={}
 
-  dati[m].forEach(g=>{
-    inc+=g.inc
-    ;[g.food,g.nonfood,g.extra].flat().forEach(s=>{
-      sp+=s.i
-      if(s.n) map[s.n]=(map[s.n]||0)+s.i
-    })
-    g.acconti.forEach(a=>{
-      acc+=a.i
-      if(a.n) map["Acconto "+a.n]=(map["Acconto "+a.n]||0)+a.i
-    })
-  })
+dati[m].forEach(g=>{
+inc+=g.inc
+;[...g.food,...g.nonfood,...g.extra].forEach(s=>{
+sp+=s.i
+if(s.n)map[s.n]=(map[s.n]||0)+s.i
+})
+g.acconti.forEach(a=>{
+acc+=a.i
+map["Acconto "+a.n]=(map["Acconto "+a.n]||0)+a.i
+})
+})
 
-  totali.innerText =
-    `Incassi €${inc} – Spese €${sp} – Acconti personale €${acc} – Utile €${inc-sp}`
-
-  dettagli.innerHTML=""
-  for(let k in map)
-    dettagli.innerHTML+=`<div class="small">${k}: €${map[k]}</div>`
+totali.innerText=`Incassi €${inc} – Spese €${sp} – Acconti €${acc} – Utile €${inc-sp}`
+dettagli.innerHTML=""
+for(let k in map)dettagli.innerHTML+=`<div class="small">${k}: €${map[k]}</div>`
 }
 
 function exportData(){
-  let a=document.createElement("a")
-  a.href="data:text/json,"+encodeURIComponent(JSON.stringify(dati,null,2))
-  a.download="rosso_dorato.json"
-  a.click()
+let a=document.createElement("a")
+a.href="data:text/json,"+encodeURIComponent(JSON.stringify(dati,null,2))
+a.download="rosso_dorato.json"
+a.click()
 }
 
 aggiornaMesi()
