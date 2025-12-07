@@ -142,7 +142,8 @@ function closeModal(){modal.style.display="none"}
 function addVoce(){
   if(+mImporto.value<=0) return;
   buffer[tipo].push({i:+mImporto.value,n:mNome.value,p:mPag.value});
-  mImporto.value=""; mNome.value="";
+  mImporto.value=""; 
+  mNome.value="";
   render();
 }
 function render(){
@@ -192,20 +193,24 @@ function mostraStorico(){
     let s=0;
     [...g.food,...g.nonfood,...g.extra].forEach(x=>s+=x.i);
     g.acconti.forEach(a=>acc+=a.i);
-    inc+=g.inc; sp+=s;
+    inc+=g.inc; 
+    sp+=s;
 
     html+=`
     <div class="day-card">
       <div class="day-header">
-        <strong>${g.data}</strong>
+        <strong>${formattaData(g.data)}</strong>
         <button class="trash" onclick="delG(${i})">🗑</button>
       </div>
-      <div class="small">Incassi €${g.inc} – Spese €${s} – Utile €${g.inc-s}</div>
+      <div class="small">
+        Incassi €${g.inc} – Spese €${s} – Utile €${g.inc-s}
+      </div>
     </div>`;
   });
 
   storico.innerHTML=html;
-  totali.innerText=`Mese: Incassi €${inc} – Spese €${sp} – Acconti €${acc} – Utile €${inc-sp}`;
+  totali.innerText=
+    `Mese: Incassi €${inc} – Spese €${sp} – Acconti €${acc} – Utile €${inc-sp}`;
 }
 
 function delG(i){
@@ -222,6 +227,15 @@ function backup(){
   a.href="data:text/json,"+encodeURIComponent(JSON.stringify(db));
   a.download=`backup-rosso-dorato-${d}.json`;
   a.click();
+}
+
+/* ✅ SOLO QUESTA FUNZIONE È NUOVA */
+function formattaData(data){
+  const d = new Date(data);
+  const gg = String(d.getDate()).padStart(2,'0');
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const aa = d.getFullYear();
+  return `${gg}/${mm}/${aa}`;
 }
 
 aggiornaMesi();
