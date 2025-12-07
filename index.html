@@ -5,18 +5,78 @@
 <title>Rosso Dorato Asproni</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body{background:#111;color:#fff;font-family:Arial;padding:20px}
-h1,h2,h3{margin:10px 0}
-.card{background:#1e1e1e;padding:15px;border-radius:10px;margin-bottom:20px}
-input,select,button{width:100%;padding:10px;margin:4px 0;border-radius:6px;border:none}
-button{background:#b30000;color:#fff;font-weight:bold}
-.small{font-size:14px;color:#ccc}
-.row{display:flex;justify-content:space-between;align-items:center}
-.btnX{background:#444;font-size:12px;padding:6px 10px}
-.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;
-background:rgba(0,0,0,.85);align-items:center;justify-content:center;z-index:10}
-.modalContent{background:#1e1e1e;padding:15px;border-radius:10px;width:90%;max-width:420px}
-.list{border:1px solid #333;padding:6px;border-radius:6px;margin-top:4px}
+body{
+  background:#111;
+  color:#eee;
+  font-family:system-ui, Arial;
+  padding:15px;
+}
+h1{text-align:center;margin-bottom:20px}
+.card{
+  background:#1c1c1c;
+  border-radius:12px;
+  padding:15px;
+  margin-bottom:15px;
+}
+input,select,button{
+  width:100%;
+  padding:10px;
+  margin:6px 0;
+  border:none;
+  border-radius:8px;
+  font-size:15px;
+}
+button{
+  background:#b11218;
+  color:#fff;
+  font-weight:600;
+}
+button.secondary{
+  background:#333;
+}
+.day-card{
+  border:1px solid #333;
+  border-radius:10px;
+  padding:10px;
+  margin-bottom:10px;
+}
+.day-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.trash{
+  background:#333;
+  border:none;
+  border-radius:6px;
+  padding:4px 8px;
+  font-size:12px;
+}
+.small{font-size:14px;color:#bbb}
+
+.modal{
+  display:none;
+  position:fixed;
+  top:0;left:0;
+  width:100%;height:100%;
+  background:rgba(0,0,0,.7);
+  justify-content:center;
+  align-items:center;
+  z-index:10;
+}
+.modal-box{
+  background:#1c1c1c;
+  width:90%;
+  max-width:420px;
+  padding:15px;
+  border-radius:12px;
+}
+.list-item{
+  display:flex;
+  justify-content:space-between;
+  font-size:14px;
+  margin-top:5px;
+}
 </style>
 </head>
 
@@ -28,29 +88,29 @@ background:rgba(0,0,0,.85);align-items:center;justify-content:center;z-index:10}
 <h2>Nuova giornata</h2>
 
 <input type="date" id="data">
-<input type="number" placeholder="Incassi contanti" id="incC">
-<input type="number" placeholder="Incassi POS" id="incP">
-<input type="number" placeholder="Sardex" id="incS">
+<input type="number" id="incC" placeholder="Incassi contanti">
+<input type="number" id="incP" placeholder="Incassi POS">
+<input type="number" id="incS" placeholder="Sardex">
 
-<button onclick="openModal('food')">➕ Spesa food</button>
-<button onclick="openModal('nonfood')">➕ Spesa non food</button>
+<button onclick="openModal('food')">➕ Spesa Food</button>
+<button onclick="openModal('nonfood')">➕ Spesa Non Food</button>
 <button onclick="openModal('extra')">➕ Extra</button>
-<button onclick="openModal('acconti')">➕ Acconto personale</button>
+<button onclick="openModal('acconti')">➕ Acconto Personale</button>
 
-<button onclick="salvaGiornata()">💾 Salva giornata</button>
+<button onclick="salva()">💾 Salva Giornata</button>
 </div>
 
 <div class="card">
 <h2>Storico</h2>
 <select id="mese" onchange="mostraStorico()"></select>
 <div id="storico"></div>
-<h3 id="totali"></h3>
+<div id="totali" class="small"></div>
 </div>
 
 <!-- MODALE -->
 <div class="modal" id="modal">
-<div class="modalContent">
-<h3 id="titolo"></h3>
+<div class="modal-box">
+<h3 id="modTit"></h3>
 
 <input type="number" id="mImporto" placeholder="Importo">
 <input type="text" id="mNome" placeholder="Nome / Fornitore / Personale">
@@ -62,105 +122,109 @@ background:rgba(0,0,0,.85);align-items:center;justify-content:center;z-index:10}
 
 <button onclick="addVoce()">Aggiungi</button>
 <div id="lista"></div>
-<button onclick="closeModal()">Chiudi</button>
+<button class="secondary" onclick="closeModal()">Chiudi</button>
 </div>
 </div>
 
 <script>
-let db=JSON.parse(localStorage.getItem("rd"))||{}
-let buffer={food:[],nonfood:[],extra:[],acconti:[]}
-let tipo=""
+let db = JSON.parse(localStorage.getItem("rd")) || {};
+let buffer = {food:[], nonfood:[], extra:[], acconti:[]};
+let tipo = "";
 
 function openModal(t){
-tipo=t; titolo.innerText=t; modal.style.display="flex"; render()
+  tipo=t;
+  modTit.innerText="Aggiungi "+t;
+  modal.style.display="flex";
+  render();
 }
 function closeModal(){modal.style.display="none"}
 
 function addVoce(){
-if(+mImporto.value<=0)return alert("Importo mancante")
-buffer[tipo].push({i:+mImporto.value,n:mNome.value,p:mPag.value})
-mImporto.value=""; mNome.value=""
-render()
+  if(+mImporto.value<=0) return;
+  buffer[tipo].push({i:+mImporto.value,n:mNome.value,p:mPag.value});
+  mImporto.value=""; mNome.value="";
+  render();
 }
 function render(){
-lista.innerHTML=""
-buffer[tipo].forEach((v,i)=>{
-lista.innerHTML+=`<div class="list row">
-<span>€${v.i} - ${v.n}</span>
-<button class="btnX" onclick="delVoce(${i})">❌</button>
-</div>`
-})
-}
-function delVoce(i){buffer[tipo].splice(i,1); render()}
-
-function salvaGiornata(){
-if(!data.value)return alert("Inserisci la data")
-let m=data.value.slice(0,7)
-if(!db[m])db[m]=[]
-
-db[m].push({
-data:data.value,
-inc:+incC.value + +incP.value + +incS.value,
-food:buffer.food,
-nonfood:buffer.nonfood,
-extra:buffer.extra,
-acconti:buffer.acconti
-})
-
-localStorage.setItem("rd",JSON.stringify(db))
-backup()
-buffer={food:[],nonfood:[],extra:[],acconti:[]}
-aggiornaMesi()
-alert("Giornata salvata ✅")
+  lista.innerHTML="";
+  buffer[tipo].forEach((v,i)=>{
+    lista.innerHTML+=`
+    <div class="list-item">
+      <span>€${v.i} - ${v.n}</span>
+      <span onclick="buffer[tipo].splice(${i},1);render()">❌</span>
+    </div>`;
+  })
 }
 
-function backup(){
-let d=new Date().toISOString().slice(0,10)
-let a=document.createElement("a")
-a.href="data:text/json,"+encodeURIComponent(JSON.stringify(db,null,2))
-a.download=`backup-rosso-dorato-${d}.json`
-a.click()
+function salva(){
+  if(!data.value) return alert("Inserisci la data");
+  let m=data.value.slice(0,7);
+  if(!db[m]) db[m]=[];
+
+  db[m].push({
+    data:data.value,
+    inc:+incC.value + +incP.value + +incS.value,
+    food:buffer.food,
+    nonfood:buffer.nonfood,
+    extra:buffer.extra,
+    acconti:buffer.acconti
+  });
+
+  localStorage.setItem("rd",JSON.stringify(db));
+  backup();
+  buffer={food:[],nonfood:[],extra:[],acconti:[]};
+  aggiornaMesi();
+  alert("Giornata salvata ✅");
 }
 
 function aggiornaMesi(){
-mese.innerHTML=""
-Object.keys(db).forEach(m=>mese.innerHTML+=`<option>${m}</option>`)
-mostraStorico()
+  mese.innerHTML="";
+  Object.keys(db).forEach(m=>mese.innerHTML+=`<option>${m}</option>`);
+  mostraStorico();
 }
 
 function mostraStorico(){
-let m=mese.value
-if(!m)return
-let html="",inc=0,sp=0,acc=0
+  let m=mese.value;
+  if(!m) return;
+  let html="", inc=0, sp=0, acc=0;
 
-db[m].forEach((g,i)=>{
-let s=0
-;[...g.food,...g.nonfood,...g.extra].forEach(x=>s+=x.i)
-g.acconti.forEach(a=>acc+=a.i)
-inc+=g.inc; sp+=s
+  db[m].forEach((g,i)=>{
+    let s=0;
+    [...g.food,...g.nonfood,...g.extra].forEach(x=>s+=x.i);
+    g.acconti.forEach(a=>acc+=a.i);
+    inc+=g.inc; sp+=s;
 
-html+=`<div class="list">
-<div class="row">
-<strong>${g.data}</strong>
-<button class="btnX" onclick="eliminaG(${i})">🗑</button>
-</div>
-<div class="small">Incassi €${g.inc} – Spese €${s}</div>
-</div>`
-})
+    html+=`
+    <div class="day-card">
+      <div class="day-header">
+        <strong>${g.data}</strong>
+        <button class="trash" onclick="delG(${i})">🗑</button>
+      </div>
+      <div class="small">Incassi €${g.inc} – Spese €${s} – Utile €${g.inc-s}</div>
+    </div>`;
+  });
 
-storico.innerHTML=html
-totali.innerText=`Totale mese – Incassi €${inc} Spese €${sp} Acconti €${acc} Utile €${inc-sp}`
+  storico.innerHTML=html;
+  totali.innerText=`Mese: Incassi €${inc} – Spese €${sp} – Acconti €${acc} – Utile €${inc-sp}`;
 }
 
-function eliminaG(i){
-if(!confirm("Eliminare questa giornata?"))return
-db[mese.value].splice(i,1)
-localStorage.setItem("rd",JSON.stringify(db))
-backup()
-mostraStorico()
+function delG(i){
+  if(!confirm("Eliminare la giornata?")) return;
+  db[mese.value].splice(i,1);
+  localStorage.setItem("rd",JSON.stringify(db));
+  backup();
+  mostraStorico();
 }
 
-aggiornaMesi()
+function backup(){
+  let d=new Date().toISOString().slice(0,10);
+  let a=document.createElement("a");
+  a.href="data:text/json,"+encodeURIComponent(JSON.stringify(db));
+  a.download=`backup-rosso-dorato-${d}.json`;
+  a.click();
+}
+
+aggiornaMesi();
 </script>
 
 </body>
