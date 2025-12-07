@@ -31,19 +31,25 @@ button{
   color:#fff;
   font-weight:600;
 }
-button.secondary{
-  background:#333;
-}
+button.secondary{ background:#333; }
+
 .day-card{
   border:1px solid #333;
   border-radius:10px;
-  padding:10px;
   margin-bottom:10px;
+  overflow:hidden;
 }
 .day-header{
   display:flex;
   justify-content:space-between;
   align-items:center;
+  padding:10px;
+  cursor:pointer;
+}
+.day-body{
+  display:none;
+  padding:10px;
+  border-top:1px solid #333;
 }
 .trash{
   background:#333;
@@ -142,8 +148,7 @@ function closeModal(){modal.style.display="none"}
 function addVoce(){
   if(+mImporto.value<=0) return;
   buffer[tipo].push({i:+mImporto.value,n:mNome.value,p:mPag.value});
-  mImporto.value=""; 
-  mNome.value="";
+  mImporto.value=""; mNome.value="";
   render();
 }
 function render(){
@@ -184,6 +189,11 @@ function aggiornaMesi(){
   mostraStorico();
 }
 
+function toggleDay(id){
+  const el=document.getElementById(id);
+  el.style.display = el.style.display==="block" ? "none" : "block";
+}
+
 function mostraStorico(){
   let m=mese.value;
   if(!m) return;
@@ -193,17 +203,21 @@ function mostraStorico(){
     let s=0;
     [...g.food,...g.nonfood,...g.extra].forEach(x=>s+=x.i);
     g.acconti.forEach(a=>acc+=a.i);
-    inc+=g.inc; 
-    sp+=s;
+    inc+=g.inc; sp+=s;
 
     html+=`
     <div class="day-card">
-      <div class="day-header">
+      <div class="day-header" onclick="toggleDay('d${i}')">
         <strong>${formattaData(g.data)}</strong>
-        <button class="trash" onclick="delG(${i})">🗑</button>
+        <button class="trash" onclick="event.stopPropagation();delG(${i})">🗑</button>
       </div>
-      <div class="small">
-        Incassi €${g.inc} – Spese €${s} – Utile €${g.inc-s}
+      <div class="day-body" id="d${i}">
+        <div class="small">
+          Incassi €${g.inc}<br>
+          Spese €${s}<br>
+          Acconti €${g.acconti.reduce((t,a)=>t+a.i,0)}<br>
+          <strong>Utile €${g.inc-s}</strong>
+        </div>
       </div>
     </div>`;
   });
@@ -229,13 +243,9 @@ function backup(){
   a.click();
 }
 
-/* ✅ SOLO QUESTA FUNZIONE È NUOVA */
 function formattaData(data){
   const d = new Date(data);
-  const gg = String(d.getDate()).padStart(2,'0');
-  const mm = String(d.getMonth()+1).padStart(2,'0');
-  const aa = d.getFullYear();
-  return `${gg}/${mm}/${aa}`;
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
 }
 
 aggiornaMesi();
