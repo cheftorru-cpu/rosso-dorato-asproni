@@ -6,16 +6,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 body{background:#111;color:#fff;font-family:Arial;padding:20px}
-h1,h2,h3{text-align:center}
+h1,h2,h3{margin:10px 0}
 .card{background:#1e1e1e;padding:15px;border-radius:10px;margin-bottom:20px}
 input,select,button{width:100%;padding:10px;margin:4px 0;border-radius:6px;border:none}
 button{background:#b30000;color:#fff;font-weight:bold}
 .small{font-size:14px;color:#ccc}
-.list{border:1px solid #333;padding:6px;margin:4px 0;border-radius:6px}
-.list button{width:auto;margin-left:5px;background:#333}
+.row{display:flex;justify-content:space-between;align-items:center}
+.btnX{background:#444;font-size:12px;padding:6px 10px}
 .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;
-background:rgba(0,0,0,.8);align-items:center;justify-content:center;z-index:10}
-.modalContent{background:#1e1e1e;padding:15px;border-radius:10px;width:90%;max-width:400px}
+background:rgba(0,0,0,.85);align-items:center;justify-content:center;z-index:10}
+.modalContent{background:#1e1e1e;padding:15px;border-radius:10px;width:90%;max-width:420px}
+.list{border:1px solid #333;padding:6px;border-radius:6px;margin-top:4px}
 </style>
 </head>
 
@@ -24,27 +25,26 @@ background:rgba(0,0,0,.8);align-items:center;justify-content:center;z-index:10}
 <h1>🍷 Rosso Dorato Asproni</h1>
 
 <div class="card">
-<h2>Inserisci giornata</h2>
+<h2>Nuova giornata</h2>
 
 <input type="date" id="data">
 <input type="number" placeholder="Incassi contanti" id="incC">
 <input type="number" placeholder="Incassi POS" id="incP">
 <input type="number" placeholder="Sardex" id="incS">
 
-<h3>Inserimenti</h3>
-<button onclick="openModal('food')">➕ Food</button>
-<button onclick="openModal('nonfood')">➕ Non food</button>
+<button onclick="openModal('food')">➕ Spesa food</button>
+<button onclick="openModal('nonfood')">➕ Spesa non food</button>
 <button onclick="openModal('extra')">➕ Extra</button>
 <button onclick="openModal('acconti')">➕ Acconto personale</button>
 
-<button onclick="salva()">💾 Salva giornata</button>
+<button onclick="salvaGiornata()">💾 Salva giornata</button>
 </div>
 
 <div class="card">
-<h2>Storico mese</h2>
-<select id="mese" onchange="storico()"></select>
-<p id="totali"></p>
-<div id="dettagli"></div>
+<h2>Storico</h2>
+<select id="mese" onchange="mostraStorico()"></select>
+<div id="storico"></div>
+<h3 id="totali"></h3>
 </div>
 
 <!-- MODALE -->
@@ -53,75 +53,53 @@ background:rgba(0,0,0,.8);align-items:center;justify-content:center;z-index:10}
 <h3 id="titolo"></h3>
 
 <input type="number" id="mImporto" placeholder="Importo">
-<input type="text" id="mNome" placeholder="Nome">
+<input type="text" id="mNome" placeholder="Nome / Fornitore / Personale">
 <select id="mPag">
 <option>Contanti</option>
 <option>POS</option>
 <option>Bonifico</option>
 </select>
 
-<button onclick="saveVoice()">Salva voce</button>
-
+<button onclick="addVoce()">Aggiungi</button>
 <div id="lista"></div>
-
 <button onclick="closeModal()">Chiudi</button>
 </div>
 </div>
 
 <script>
-let dati=JSON.parse(localStorage.getItem("rd"))||{}
+let db=JSON.parse(localStorage.getItem("rd"))||{}
 let buffer={food:[],nonfood:[],extra:[],acconti:[]}
-let corrente=""
+let tipo=""
 
-function openModal(tipo){
-corrente=tipo
-titolo.innerText="Gestione "+tipo
-modal.style.display="flex"
-renderLista()
+function openModal(t){
+tipo=t; titolo.innerText=t; modal.style.display="flex"; render()
 }
-
 function closeModal(){modal.style.display="none"}
 
-function saveVoice(){
-let i=+mImporto.value||0
-if(i<=0)return alert("Importo mancante")
-buffer[corrente].push({i,n:mNome.value,p:mPag.value})
+function addVoce(){
+if(+mImporto.value<=0)return alert("Importo mancante")
+buffer[tipo].push({i:+mImporto.value,n:mNome.value,p:mPag.value})
 mImporto.value=""; mNome.value=""
-renderLista()
+render()
 }
-
-function renderLista(){
+function render(){
 lista.innerHTML=""
-buffer[corrente].forEach((v,idx)=>{
-lista.innerHTML+=`
-<div class="list">
-€${v.i} - ${v.n}
-<button onclick="edit(${idx})">✏️</button>
-<button onclick="del(${idx})">❌</button>
+buffer[tipo].forEach((v,i)=>{
+lista.innerHTML+=`<div class="list row">
+<span>€${v.i} - ${v.n}</span>
+<button class="btnX" onclick="delVoce(${i})">❌</button>
 </div>`
 })
 }
+function delVoce(i){buffer[tipo].splice(i,1); render()}
 
-function edit(i){
-mImporto.value=buffer[corrente][i].i
-mNome.value=buffer[corrente][i].n
-buffer[corrente].splice(i,1)
-renderLista()
-}
+function salvaGiornata(){
+if(!data.value)return alert("Inserisci la data")
+let m=data.value.slice(0,7)
+if(!db[m])db[m]=[]
 
-function del(i){
-buffer[corrente].splice(i,1)
-renderLista()
-}
-
-function salva(){
-let d=data.value
-if(!d)return alert("Inserisci data")
-let m=d.slice(0,7)
-if(!dati[m])dati[m]=[]
-
-dati[m].push({
-data:d,
+db[m].push({
+data:data.value,
 inc:+incC.value + +incP.value + +incS.value,
 food:buffer.food,
 nonfood:buffer.nonfood,
@@ -129,48 +107,57 @@ extra:buffer.extra,
 acconti:buffer.acconti
 })
 
-localStorage.setItem("rd",JSON.stringify(dati))
-backupAutomatico()
-
-alert("Giornata salvata ✅")
+localStorage.setItem("rd",JSON.stringify(db))
+backup()
 buffer={food:[],nonfood:[],extra:[],acconti:[]}
 aggiornaMesi()
+alert("Giornata salvata ✅")
 }
 
-function backupAutomatico(){
-let oggi=new Date().toISOString().slice(0,10)
+function backup(){
+let d=new Date().toISOString().slice(0,10)
 let a=document.createElement("a")
-a.href="data:text/json,"+encodeURIComponent(JSON.stringify(dati,null,2))
-a.download=`backup-rosso-dorato-${oggi}.json`
+a.href="data:text/json,"+encodeURIComponent(JSON.stringify(db,null,2))
+a.download=`backup-rosso-dorato-${d}.json`
 a.click()
 }
 
 function aggiornaMesi(){
 mese.innerHTML=""
-for(let m in dati)mese.innerHTML+=`<option>${m}</option>`
-storico()
+Object.keys(db).forEach(m=>mese.innerHTML+=`<option>${m}</option>`)
+mostraStorico()
 }
 
-function storico(){
+function mostraStorico(){
 let m=mese.value
 if(!m)return
-let inc=0,sp=0,acc=0,map={}
+let html="",inc=0,sp=0,acc=0
 
-dati[m].forEach(g=>{
-inc+=g.inc
-;[...g.food,...g.nonfood,...g.extra].forEach(s=>{
-sp+=s.i; if(s.n)map[s.n]=(map[s.n]||0)+s.i
-})
-g.acconti.forEach(a=>{
-acc+=a.i; map["Acconto "+a.n]=(map["Acconto "+a.n]||0)+a.i
-})
+db[m].forEach((g,i)=>{
+let s=0
+;[...g.food,...g.nonfood,...g.extra].forEach(x=>s+=x.i)
+g.acconti.forEach(a=>acc+=a.i)
+inc+=g.inc; sp+=s
+
+html+=`<div class="list">
+<div class="row">
+<strong>${g.data}</strong>
+<button class="btnX" onclick="eliminaG(${i})">🗑</button>
+</div>
+<div class="small">Incassi €${g.inc} – Spese €${s}</div>
+</div>`
 })
 
-totali.innerText=
-`Incassi €${inc} – Spese €${sp} – Acconti €${acc} – Utile €${inc-sp}`
+storico.innerHTML=html
+totali.innerText=`Totale mese – Incassi €${inc} Spese €${sp} Acconti €${acc} Utile €${inc-sp}`
+}
 
-dettagli.innerHTML=""
-for(let k in map)dettagli.innerHTML+=`<div class="small">${k}: €${map[k]}</div>`
+function eliminaG(i){
+if(!confirm("Eliminare questa giornata?"))return
+db[mese.value].splice(i,1)
+localStorage.setItem("rd",JSON.stringify(db))
+backup()
+mostraStorico()
 }
 
 aggiornaMesi()
