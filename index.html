@@ -39,6 +39,13 @@ button.secondary{background:#333}
 <button onclick="salva()">💾 Salva Giornata</button>
 </div>
 
+<!-- ✅ RIEPILOGO PER MESE -->
+<div class="card">
+<h2>Riepilogo mese</h2>
+<select id="selMese" onchange="riepilogoMese()"></select>
+<div id="boxRiepilogo" class="small"></div>
+</div>
+
 <div class="card">
 <h2>Storico</h2>
 <div id="storico"></div>
@@ -67,15 +74,18 @@ let tipo="";
 
 function openModal(t){tipo=t;modTit.innerText="Aggiungi "+t;modal.style.display="flex";render()}
 function closeModal(){modal.style.display="none"}
+
 function addVoce(){
   if(+mImporto.value<=0) return;
   buffer[tipo].push({i:+mImporto.value,n:mNome.value,p:mPag.value});
   mImporto.value="";mNome.value="";render();
 }
+
 function render(){
   lista.innerHTML="";
   buffer[tipo].forEach((v,i)=>{
-    lista.innerHTML+=`<div class="list-item">
+    lista.innerHTML+=`
+    <div class="list-item">
       <span>€${v.i} - ${v.n}</span>
       <span onclick="buffer[tipo].splice(${i},1);render()">❌</span>
     </div>`;
@@ -101,10 +111,10 @@ function salva(){
 
 function toggle(el){el.style.display=el.style.display==="block"?"none":"block"}
 
-function blocco(tit,arr){
+function blocco(t,arr){
   let tot=0,html="";
   arr.forEach(v=>{tot+=v.i;html+=`<div class="list-item">€${v.i} - ${v.n}</div>`});
-  return `<div class="sep"><strong>${tit} €${tot}</strong>${html}</div>`;
+  return `<div class="sep"><strong>${t} €${tot}</strong>${html}</div>`;
 }
 
 function mostraStorico(){
@@ -142,12 +152,46 @@ function mostraStorico(){
     </div>`;
   });
   storico.innerHTML=html;
+  popolaMesi();
+  riepilogoMese();
+}
+
+function popolaMesi(){
+  selMese.innerHTML="";
+  Object.keys(db).sort().reverse().forEach(m=>{
+    selMese.innerHTML+=`<option value="${m}">${m}</option>`;
+  });
+}
+
+function riepilogoMese(){
+  let m=selMese.value;
+  if(!db[m]) return;
+
+  let inc=0,food=0,nonfood=0,extra=0,acc=0;
+  db[m].forEach(g=>{
+    inc+=g.inc;
+    g.food.forEach(x=>food+=x.i);
+    g.nonfood.forEach(x=>nonfood+=x.i);
+    g.extra.forEach(x=>extra+=x.i);
+    g.acconti.forEach(x=>acc+=x.i);
+  });
+
+  let sp=food+nonfood+extra;
+  boxRiepilogo.innerHTML=`
+    Incassi €${inc}<br>
+    Food €${food}<br>
+    Non Food €${nonfood}<br>
+    Extra €${extra}<br>
+    Acconti €${acc}<br>
+    <strong>Utile €${inc-sp}</strong>
+  `;
 }
 
 function formattaData(d){
   let x=new Date(d);
-  return `${String(x.getDate()).padStart(2,'0')}/${String(x.getMonth()+1).padStart(2,'0')}/${x.getFullYear()}`
+  return `${String(x.getDate()).padStart(2,'0')}/${String(x.getMonth()+1).padStart(2,'0')}/${x.getFullYear()}`;
 }
+
 mostraStorico();
 </script>
 </body>
