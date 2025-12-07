@@ -30,21 +30,21 @@ button{background:#b30000;color:#fff;font-weight:bold}
 
 <h3>Spese food</h3>
 <div id="food"></div>
-<button onclick="add('food')">➕ Aggiungi food</button>
+<button type="button" onclick="addRow('food','Fornitore food')">➕ Aggiungi food</button>
 
 <h3>Spese non food</h3>
 <div id="nonfood"></div>
-<button onclick="add('nonfood')">➕ Aggiungi non food</button>
+<button type="button" onclick="addRow('nonfood','Fornitore non food')">➕ Aggiungi non food</button>
 
 <h3>Extra personale</h3>
 <div id="extra"></div>
-<button onclick="add('extra')">➕ Aggiungi extra</button>
+<button type="button" onclick="addRow('extra','Nome personale')">➕ Aggiungi extra</button>
 
 <h3>Acconti al personale</h3>
 <div id="acconti"></div>
-<button onclick="add('acconti')">➕ Aggiungi acconto</button>
+<button type="button" onclick="addRow('acconti','Nome dipendente')">➕ Aggiungi acconto</button>
 
-<button onclick="salva()">💾 Salva giornata</button>
+<button type="button" onclick="salva()">💾 Salva giornata</button>
 </div>
 
 <div class="card">
@@ -54,104 +54,101 @@ button{background:#b30000;color:#fff;font-weight:bold}
 <div id="dettagli"></div>
 </div>
 
-<button onclick="export()">📤 Esporta dati</button>
+<button type="button" onclick="exportData()">📤 Esporta dati</button>
 
 <script>
 let dati = JSON.parse(localStorage.getItem("rd")) || {}
 
-function riga(nome){
-return `
-<div class="row">
-<input type="number" placeholder="Importo">
-<input type="text" placeholder="${nome}">
-<select>
-<option>Contanti</option>
-<option>POS</option>
-<option>Bonifico</option>
-</select>
-</div>`
+function addRow(containerId, placeholder){
+  const div = document.createElement("div")
+  div.className = "row"
+  div.innerHTML = `
+    <input type="number" placeholder="Importo">
+    <input type="text" placeholder="${placeholder}">
+    <select>
+      <option>Contanti</option>
+      <option>POS</option>
+      <option>Bonifico</option>
+    </select>`
+  document.getElementById(containerId).appendChild(div)
 }
 
-function add(id){
-let placeholder = (id==="acconti") ? "Nome dipendente" : "Nome fornitore / persona"
-document.getElementById(id).innerHTML += riga(placeholder)
-}
-
-['food','nonfood','extra','acconti'].forEach(add)
-
-function salva(){
-let d = data.value
-if(!d) return alert("Inserisci la data")
-let m = d.slice(0,7)
-if(!dati[m]) dati[m]=[]
+// riga iniziale
+addRow('food','Fornitore food')
+addRow('nonfood','Fornitore non food')
+addRow('extra','Nome personale')
+addRow('acconti','Nome dipendente')
 
 function leggi(id){
-let arr=[]
-document.querySelectorAll(`#${id} .row`).forEach(r=>{
-let i=+r.children[0].value||0
-let n=r.children[1].value
-let p=r.children[2].value
-if(i>0) arr.push({i,n,p})
-})
-return arr
+  let arr=[]
+  document.querySelectorAll(`#${id} .row`).forEach(r=>{
+    let i=+r.children[0].value||0
+    let n=r.children[1].value
+    let p=r.children[2].value
+    if(i>0) arr.push({i,n,p})
+  })
+  return arr
 }
 
-dati[m].push({
-data:d,
-inc:+incC.value + +incP.value + +incS.value,
-food:leggi("food"),
-nonfood:leggi("nonfood"),
-extra:leggi("extra"),
-acconti:leggi("acconti")
-})
+function salva(){
+  let d=data.value
+  if(!d) return alert("Inserisci la data")
+  let m=d.slice(0,7)
+  if(!dati[m]) dati[m]=[]
 
-localStorage.setItem("rd",JSON.stringify(dati))
-alert("Giornata salvata ✅")
-mesi()
+  dati[m].push({
+    data:d,
+    inc:+incC.value + +incP.value + +incS.value,
+    food:leggi("food"),
+    nonfood:leggi("nonfood"),
+    extra:leggi("extra"),
+    acconti:leggi("acconti")
+  })
+
+  localStorage.setItem("rd",JSON.stringify(dati))
+  alert("Giornata salvata ✅")
+  aggiornaMesi()
 }
 
-function mesi(){
-mese.innerHTML=""
-for(let m in dati)mese.innerHTML += `<option>${m}</option>`
-storico()
+function aggiornaMesi(){
+  mese.innerHTML=""
+  for(let m in dati) mese.innerHTML+=`<option>${m}</option>`
+  storico()
 }
 
 function storico(){
-let m = mese.value
-if(!m) return
+  let m=mese.value
+  if(!m) return
+  let inc=0,sp=0,acc=0,map={}
 
-let inc=0,sp=0,acc=0,map={}
+  dati[m].forEach(g=>{
+    inc+=g.inc
+    ;[g.food,g.nonfood,g.extra].flat().forEach(s=>{
+      sp+=s.i
+      if(s.n) map[s.n]=(map[s.n]||0)+s.i
+    })
+    g.acconti.forEach(a=>{
+      acc+=a.i
+      if(a.n) map["Acconto "+a.n]=(map["Acconto "+a.n]||0)+a.i
+    })
+  })
 
-dati[m].forEach(g=>{
-inc+=g.inc
+  totali.innerText =
+    `Incassi €${inc} – Spese €${sp} – Acconti personale €${acc} – Utile €${inc-sp}`
 
-[g.food,g.nonfood,g.extra].flat().forEach(s=>{
-sp+=s.i
-if(s.n) map[s.n]=(map[s.n]||0)+s.i
-})
-
-g.acconti.forEach(a=>{
-acc+=a.i
-if(a.n) map["Acconto "+a.n]=(map["Acconto "+a.n]||0)+a.i
-})
-})
-
-totali.innerText =
-`Incassi €${inc} – Spese €${sp} – Acconti personale €${acc} – Utile €${inc-sp}`
-
-dettagli.innerHTML=""
-for(let k in map)
-dettagli.innerHTML += `<div class="small">${k}: €${map[k]}</div>`
+  dettagli.innerHTML=""
+  for(let k in map)
+    dettagli.innerHTML+=`<div class="small">${k}: €${map[k]}</div>`
 }
 
-function export(){
-let a=document.createElement("a")
-a.href="data:text/json,"+encodeURIComponent(JSON.stringify(dati,null,2))
-a.download="rosso_dorato.json"
-a.click()
+function exportData(){
+  let a=document.createElement("a")
+  a.href="data:text/json,"+encodeURIComponent(JSON.stringify(dati,null,2))
+  a.download="rosso_dorato.json"
+  a.click()
 }
 
-mesi()
+aggiornaMesi()
 </script>
 
 </body>
