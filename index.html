@@ -32,7 +32,6 @@ button.secondary{background:#333}
 <input type="number" id="incC" placeholder="Incassi contanti">
 <input type="number" id="incP" placeholder="Incassi POS">
 <input type="number" id="incS" placeholder="Sardex">
-
 <button onclick="openModal('food')">➕ Food</button>
 <button onclick="openModal('nonfood')">➕ Non Food</button>
 <button onclick="openModal('extra')">➕ Extra</button>
@@ -47,11 +46,10 @@ button.secondary{background:#333}
 </div>
 
 <div class="card">
-<h2>Storico giornate</h2>
+<h2>Storico</h2>
 <div id="storico"></div>
 </div>
 
-<!-- MODALE -->
 <div class="modal" id="modal">
   <div class="modal-box">
     <h3 id="modTit"></h3>
@@ -64,19 +62,19 @@ button.secondary{background:#333}
 </div>
 
 <script>
-let db = JSON.parse(localStorage.getItem("rd")) || {};
-let buffer = {food:[],nonfood:[],extra:[],acconti:[]};
+let db=JSON.parse(localStorage.getItem("rd"))||{};
+let buffer={food:[],nonfood:[],extra:[],acconti:[]};
 let tipo="";
 
-function openModal(t){ tipo=t; modTit.innerText="Aggiungi "+t; modal.style.display="flex"; render(); }
-function closeModal(){ modal.style.display="none"; }
+function openModal(t){tipo=t;modTit.innerText="Aggiungi "+t;modal.style.display="flex";render();}
+function closeModal(){modal.style.display="none";}
 
 function addVoce(){
-  if(+mImporto.value<=0) return;
+  if(+mImporto.value<=0)return;
   buffer[tipo].push({i:+mImporto.value,n:mNome.value||"Senza nome"});
-  mImporto.value=""; mNome.value="";
-  render();
+  mImporto.value="";mNome.value="";render();
 }
+
 function render(){
   lista.innerHTML="";
   buffer[tipo].forEach((v,i)=>{
@@ -89,9 +87,9 @@ function render(){
 }
 
 function salva(){
-  if(!data.value) return alert("Inserisci la data");
+  if(!data.value)return alert("Inserisci data");
   let m=data.value.slice(0,7);
-  if(!db[m]) db[m]=[];
+  if(!db[m])db[m]=[];
   db[m].push({
     data:data.value,
     inc:+incC.value + +incP.value + +incS.value,
@@ -105,7 +103,10 @@ function salva(){
   mostraStorico();
 }
 
-function toggle(el){ el.style.display = el.style.display==="block"?"none":"block"; }
+function toggleById(id){
+  let el=document.getElementById(id);
+  el.style.display=el.style.display==="block"?"none":"block";
+}
 
 function mostraStorico(){
   let html="";
@@ -115,49 +116,51 @@ function mostraStorico(){
       let sp=[...g.food,...g.nonfood,...g.extra].reduce((t,x)=>t+x.i,0);
       days+=`
       <div class="day-card">
-        <div class="day-header" onclick="toggle(document.getElementById('d${mi}_${i}'))">
-          ${formattaData(g.data)} <span>€${g.inc-sp}</span>
+        <div class="day-header" onclick="toggleById('d${mi}_${i}')">
+          ${fmt(g.data)} <span>€${g.inc-sp}</span>
         </div>
         <div class="day-body" id="d${mi}_${i}">
-          ${blocco("Food",g.food)}
-          ${blocco("Non Food",g.nonfood)}
-          ${blocco("Extra",g.extra)}
-          ${blocco("Acconti",g.acconti)}
+          ${blk("Food",g.food)}
+          ${blk("Non Food",g.nonfood)}
+          ${blk("Extra",g.extra)}
+          ${blk("Acconti",g.acconti)}
         </div>
       </div>`;
     });
+
     html+=`
     <div class="month-card">
-      <div class="month-header" onclick="toggle(document.getElementById('m${mi}'))">${m}</div>
+      <div class="month-header" onclick="toggleById('m${mi}')">${m}</div>
       <div class="month-body" id="m${mi}">${days}</div>
     </div>`;
   });
   storico.innerHTML=html;
-  selMese.innerHTML = Object.keys(db).sort().reverse().map(m=>`<option>${m}</option>`).join("");
+  selMese.innerHTML=Object.keys(db).sort().reverse().map(m=>`<option>${m}</option>`).join("");
   riepilogoMese();
 }
 
-function sommaPerNome(arr,map){ arr.forEach(v=> map[v.n]=(map[v.n]||0)+v.i ); }
+function somma(arr,o){arr.forEach(v=>o[v.n]=(o[v.n]||0)+v.i);}
 
 function riepilogoMese(){
-  let m=selMese.value;
-  if(!db[m]) return;
-
-  let tot={food:{},nonfood:{},extra:{},acconti:{}};
-  let inc=0;
+  let m=selMese.value;if(!db[m])return;
+  let inc=0,tot={food:{},nonfood:{},extra:{},acconti:{}};
 
   db[m].forEach(g=>{
     inc+=g.inc;
-    sommaPerNome(g.food,tot.food);
-    sommaPerNome(g.nonfood,tot.nonfood);
-    sommaPerNome(g.extra,tot.extra);
-    sommaPerNome(g.acconti,tot.acconti);
+    somma(g.food,tot.food);
+    somma(g.nonfood,tot.nonfood);
+    somma(g.extra,tot.extra);
+    somma(g.acconti,tot.acconti);
   });
 
-  function bloccoTot(t,o){
+  function blocco(t,o,id){
     let s=0,h="";
     Object.keys(o).forEach(k=>{s+=o[k];h+=`<div>• ${k}: €${o[k]}</div>`});
-    return `<div class="sep"><strong>${t} €${s}</strong>${h}</div>`;
+    return `
+    <div class="sep">
+      <strong style="cursor:pointer" onclick="toggleById('${id}')">${t} €${s}</strong>
+      <div id="${id}" style="display:none;margin-top:6px">${h}</div>
+    </div>`;
   }
 
   let sp=
@@ -167,21 +170,21 @@ function riepilogoMese(){
 
   boxRiepilogo.innerHTML=`
     <strong>Incassi €${inc}</strong>
-    ${bloccoTot("Food",tot.food)}
-    ${bloccoTot("Non Food",tot.nonfood)}
-    ${bloccoTot("Extra",tot.extra)}
-    ${bloccoTot("Acconti",tot.acconti)}
+    ${blocco("Food",tot.food,"rf")}
+    ${blocco("Non Food",tot.nonfood,"rnf")}
+    ${blocco("Extra",tot.extra,"re")}
+    ${blocco("Acconti",tot.acconti,"ra")}
     <div class="sep"><strong>Utile €${inc-sp}</strong></div>
   `;
 }
 
-function blocco(t,a){
+function blk(t,a){
   let s=0,h="";
   a.forEach(v=>{s+=v.i;h+=`<div>€${v.i} - ${v.n}</div>`});
   return `<div class="sep"><strong>${t} €${s}</strong>${h}</div>`;
 }
 
-function formattaData(d){
+function fmt(d){
   let x=new Date(d);
   return `${String(x.getDate()).padStart(2,'0')}/${String(x.getMonth()+1).padStart(2,'0')}/${x.getFullYear()}`;
 }
