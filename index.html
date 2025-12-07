@@ -11,25 +11,11 @@ h1,h2,h3{text-align:center}
 input,select,button{width:100%;padding:10px;margin:4px 0;border-radius:6px;border:none}
 button{background:#b30000;color:#fff;font-weight:bold}
 .small{font-size:14px;color:#ccc}
-
-/* MODALE */
-.modal{
-display:none;
-position:fixed;
-top:0;left:0;
-width:100%;height:100%;
-background:rgba(0,0,0,.8);
-align-items:center;
-justify-content:center;
-z-index:10
-}
-.modalContent{
-background:#1e1e1e;
-padding:15px;
-border-radius:10px;
-width:90%;
-max-width:400px
-}
+.list{border:1px solid #333;padding:6px;margin:4px 0;border-radius:6px}
+.list button{width:auto;margin-left:5px;background:#333}
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+background:rgba(0,0,0,.8);align-items:center;justify-content:center;z-index:10}
+.modalContent{background:#1e1e1e;padding:15px;border-radius:10px;width:90%;max-width:400px}
 </style>
 </head>
 
@@ -41,39 +27,31 @@ max-width:400px
 <h2>Inserisci giornata</h2>
 
 <input type="date" id="data">
-
 <input type="number" placeholder="Incassi contanti" id="incC">
 <input type="number" placeholder="Incassi POS" id="incP">
 <input type="number" placeholder="Satispay" id="incS">
 
-<h3>Spese food</h3>
-<button onclick="openModal('food')">➕ Aggiungi food</button>
-
-<h3>Spese non food</h3>
-<button onclick="openModal('nonfood')">➕ Aggiungi non food</button>
-
-<h3>Extra personale</h3>
-<button onclick="openModal('extra')">➕ Aggiungi extra</button>
-
-<h3>Acconti al personale</h3>
-<button onclick="openModal('acconti')">➕ Aggiungi acconto</button>
+<h3>Inserimenti</h3>
+<button onclick="openModal('food')">➕ Food</button>
+<button onclick="openModal('nonfood')">➕ Non food</button>
+<button onclick="openModal('extra')">➕ Extra</button>
+<button onclick="openModal('acconti')">➕ Acconto personale</button>
 
 <button onclick="salva()">💾 Salva giornata</button>
 </div>
 
 <div class="card">
-<h2>Storico (mese)</h2>
+<h2>Storico mese</h2>
 <select id="mese" onchange="storico()"></select>
 <p id="totali"></p>
 <div id="dettagli"></div>
 </div>
 
-<button onclick="exportData()">📤 Esporta dati</button>
-
 <!-- MODALE -->
 <div class="modal" id="modal">
 <div class="modalContent">
-<h3 id="modalTitle"></h3>
+<h3 id="titolo"></h3>
+
 <input type="number" id="mImporto" placeholder="Importo">
 <input type="text" id="mNome" placeholder="Nome">
 <select id="mPag">
@@ -81,33 +59,59 @@ max-width:400px
 <option>POS</option>
 <option>Bonifico</option>
 </select>
-<button onclick="saveModal()">Salva voce</button>
-<button onclick="closeModal()">Annulla</button>
+
+<button onclick="saveVoice()">Salva voce</button>
+
+<div id="lista"></div>
+
+<button onclick="closeModal()">Chiudi</button>
 </div>
 </div>
 
 <script>
 let dati=JSON.parse(localStorage.getItem("rd"))||{}
 let buffer={food:[],nonfood:[],extra:[],acconti:[]}
-let tipoCorrente=""
+let corrente=""
 
 function openModal(tipo){
-tipoCorrente=tipo
+corrente=tipo
+titolo.innerText="Gestione "+tipo
 modal.style.display="flex"
-modalTitle.innerText="Aggiungi "+tipo
-mImporto.value=""
-mNome.value=""
+renderLista()
 }
 
-function closeModal(){
-modal.style.display="none"
-}
+function closeModal(){modal.style.display="none"}
 
-function saveModal(){
+function saveVoice(){
 let i=+mImporto.value||0
 if(i<=0)return alert("Importo mancante")
-buffer[tipoCorrente].push({i,n:mNome.value,p:mPag.value})
-closeModal()
+buffer[corrente].push({i,n:mNome.value,p:mPag.value})
+mImporto.value=""; mNome.value=""
+renderLista()
+}
+
+function renderLista(){
+lista.innerHTML=""
+buffer[corrente].forEach((v,idx)=>{
+lista.innerHTML+=`
+<div class="list">
+€${v.i} - ${v.n}
+<button onclick="edit(${idx})">✏️</button>
+<button onclick="del(${idx})">❌</button>
+</div>`
+})
+}
+
+function edit(i){
+mImporto.value=buffer[corrente][i].i
+mNome.value=buffer[corrente][i].n
+buffer[corrente].splice(i,1)
+renderLista()
+}
+
+function del(i){
+buffer[corrente].splice(i,1)
+renderLista()
 }
 
 function salva(){
@@ -125,10 +129,20 @@ extra:buffer.extra,
 acconti:buffer.acconti
 })
 
-buffer={food:[],nonfood:[],extra:[],acconti:[]}
 localStorage.setItem("rd",JSON.stringify(dati))
+backupAutomatico()
+
 alert("Giornata salvata ✅")
+buffer={food:[],nonfood:[],extra:[],acconti:[]}
 aggiornaMesi()
+}
+
+function backupAutomatico(){
+let oggi=new Date().toISOString().slice(0,10)
+let a=document.createElement("a")
+a.href="data:text/json,"+encodeURIComponent(JSON.stringify(dati,null,2))
+a.download=`backup-rosso-dorato-${oggi}.json`
+a.click()
 }
 
 function aggiornaMesi(){
@@ -145,25 +159,18 @@ let inc=0,sp=0,acc=0,map={}
 dati[m].forEach(g=>{
 inc+=g.inc
 ;[...g.food,...g.nonfood,...g.extra].forEach(s=>{
-sp+=s.i
-if(s.n)map[s.n]=(map[s.n]||0)+s.i
+sp+=s.i; if(s.n)map[s.n]=(map[s.n]||0)+s.i
 })
 g.acconti.forEach(a=>{
-acc+=a.i
-map["Acconto "+a.n]=(map["Acconto "+a.n]||0)+a.i
+acc+=a.i; map["Acconto "+a.n]=(map["Acconto "+a.n]||0)+a.i
 })
 })
 
-totali.innerText=`Incassi €${inc} – Spese €${sp} – Acconti €${acc} – Utile €${inc-sp}`
+totali.innerText=
+`Incassi €${inc} – Spese €${sp} – Acconti €${acc} – Utile €${inc-sp}`
+
 dettagli.innerHTML=""
 for(let k in map)dettagli.innerHTML+=`<div class="small">${k}: €${map[k]}</div>`
-}
-
-function exportData(){
-let a=document.createElement("a")
-a.href="data:text/json,"+encodeURIComponent(JSON.stringify(dati,null,2))
-a.download="rosso_dorato.json"
-a.click()
 }
 
 aggiornaMesi()
