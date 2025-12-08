@@ -6,24 +6,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-body{background:#111;color:#eee;font-family:system-ui,Arial;padding:15px}
-h1{text-align:center}
-.card{background:#1c1c1c;border-radius:12px;padding:15px;margin-bottom:15px}
-input,button,select{width:100%;padding:10px;margin:6px 0;border:none;border-radius:8px}
-button{background:#b11218;color:#fff;font-weight:600}
+body{background:#111;color:#eee;font-family:system-ui,Arial;padding:15px;min-height:100vh}
+h1{text-align:center;font-size:1.4em;margin:10px 0}
+.card{background:#1c1c1c;border-radius:12px;padding:20px;margin-bottom:15px}
+input,button,select{width:100%;padding:14px;margin:8px 0;border:none;border-radius:8px;font-size:16px;box-sizing:border-box}
+button{background:#b11218;color:#fff;font-weight:600;font-size:16px;touch-action:manipulation}
 button.secondary{background:#333}
-.month-card,.day-card{border:1px solid #333;border-radius:10px;margin-bottom:10px}
-.month-header,.day-header{padding:10px;background:#222;cursor:pointer;display:flex;justify-content:space-between}
-.month-body,.day-body{display:none;padding:10px}
+.month-card,.day-card,.fattura-card{border:1px solid #333;border-radius:10px;margin-bottom:10px;overflow:hidden}
+.month-header,.day-header,.fattura-header{padding:15px;background:#222;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-weight:600;touch-action:manipulation}
+.day-header .action{opacity:0;transition:opacity .3s}
+.day-card:hover .day-header .action{opacity:1}
+.month-body,.day-body,.tot-body,.fattura-body{display:none;padding:15px}
 .small{color:#bbb;font-size:14px}
-.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);justify-content:center;align-items:center}
-.modal-box{background:#1c1c1c;border-radius:12px;padding:15px;width:90%;max-width:420px}
-.list-item{display:flex;justify-content:space-between;font-size:14px;margin-top:4px}
-.sep{margin-top:8px;border-top:1px dashed #444;padding-top:6px}
-.tot-header{cursor:pointer;font-weight:600}
-.tot-body{display:none;padding-left:10px}
-.del{cursor:pointer;color:#f55}
-.row{display:flex;justify-content:space-between;align-items:center}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);justify-content:center;align-items:center;padding:20px;box-sizing:border-box}
+.modal-box{background:#1c1c1c;border-radius:16px;padding:25px;width:95%;max-width:420px;max-height:80vh;overflow-y:auto}
+.list-item{display:flex;justify-content:space-between;font-size:16px;padding:12px 0;border-bottom:1px solid #333}
+.sep{margin-top:12px;border-top:1px dashed #444;padding-top:12px}
+.tot-header,.fattura-header{cursor:pointer;font-weight:600;padding:12px;background:#1a1a1a;border-radius:8px;margin:6px 0;display:flex;justify-content:space-between;touch-action:manipulation}
+.row{display:flex;justify-content:space-between;align-items:center;padding:8px 0}
+.action span{cursor:pointer;margin-left:8px;font-size:18px;padding:4px;touch-action:manipulation}
+.tot-row,.fatt-row{padding:8px 0;font-size:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.tot-row .action{margin-top:4px}
+.debito{background:#ff6b35;color:#fff;padding:4px 8px;border-radius:4px;font-size:14px}
+@media (max-width:480px){
+  body{padding:10px}
+  .card{padding:18px}
+  .action span{margin-left:6px;font-size:16px}
+  .day-header .action{opacity:1}
+  .tot-row .action{margin-top:2px;font-size:16px}
+}
 </style>
 </head>
 
@@ -40,12 +51,20 @@ button.secondary{background:#333}
 <button onclick="openModal('nonfood')">➕ Non Food</button>
 <button onclick="openModal('extra')">➕ Extra</button>
 <button onclick="openModal('acconti')">➕ Acconti</button>
+<button onclick="openModal('fatture')">➕ Fatture Merce</button>
 <button onclick="salva()">💾 Salva giornata</button>
+</div>
+
+<div class="card">
+<h2>📋 Fatture aperte</h2>
+<button class="secondary" onclick="nuovaFattura()" style="margin-bottom:10px">➕ Nuova fattura</button>
+<div id="fattureAperte"></div>
 </div>
 
 <div class="card">
 <h2>Riepilogo mese</h2>
 <select id="selMese" onchange="riepilogoMese()"></select>
+<button class="secondary" onclick="toggleAllDays()">📊 Tutti i giorni</button>
 <div id="boxRiepilogo" class="small"></div>
 </div>
 
@@ -58,151 +77,82 @@ button.secondary{background:#333}
   <div class="modal-box">
     <h3 id="modTit"></h3>
     <input type="number" id="mImporto" placeholder="Importo">
-    <input type="text" id="mNome" placeholder="Nome / Fornitore">
-    <button onclick="addVoce()">Aggiungi</button>
+    <input type="text" id="mNome" placeholder="Nome / Fornitore / Persona">
+    <button id="btnSave" onclick="salvaVoce()">Aggiungi</button>
     <div id="lista"></div>
     <button class="secondary" onclick="closeModal()">Chiudi</button>
   </div>
 </div>
 
 <script>
-let db = JSON.parse(localStorage.getItem("rd")) || {};
-let buffer = {food:[],nonfood:[],extra:[],acconti:[]};
+let db = {}; 
+let fatture = {};
+try {
+  db = JSON.parse(localStorage.getItem("rd")) || {};
+  fatture = JSON.parse(localStorage.getItem("fatture")) || {};
+} catch(e) {
+  db = {}; 
+  fatture = {};
+}
+let buffer = {food:[],nonfood:[],extra:[],acconti:[],fatture:[]};
 let tipo = "";
+let edit = null;
 
-function openModal(t){
+function openModal(t) {
   tipo = t;
+  edit = null;
+  btnSave.innerText = "Aggiungi";
   modTit.innerText = "Aggiungi " + t;
   modal.style.display = "flex";
   render();
+  if(t === "fatture") {
+    mNome.style.display = "none";
+    mImporto.placeholder = "Seleziona fattura da sezione 'Fatture aperte'";
+  } else {
+    mNome.style.display = "block";
+    mImporto.placeholder = "Importo";
+  }
 }
-function closeModal(){ modal.style.display = "none"; }
 
-function addVoce(){
-  if(+mImporto.value<=0) return;
-  buffer[tipo].push({i:+mImporto.value,n:mNome.value||"Senza nome"});
-  mImporto.value=""; mNome.value="";
+function closeModal() {
+  modal.style.display = "none";
+}
+
+function salvaVoce() {
+  if(+mImporto.value <= 0) return alert("Importo non valido");
+  
+  if(edit) {
+    let v = db[edit.m][edit.gi][edit.tipo][edit.i];
+    v.i = +mImporto.value;
+    v.n = mNome.value || "Senza nome";
+    localStorage.setItem("rd", JSON.stringify(db));
+    edit = null;
+    mostraStorico();
+  } else if(tipo === "fatture") {
+    alert("Per le fatture usa la sezione 'Fatture aperte' o il bottone 'Paga acconto'");
+    return;
+  } else {
+    buffer[tipo].push({i: +mImporto.value, n: mNome.value || "Senza nome"});
+  }
+  mImporto.value = "";
+  mNome.value = "";
   render();
 }
 
-function render(){
-  lista.innerHTML="";
-  buffer[tipo].forEach((v,i)=>{
-    lista.innerHTML+=`
-      <div class="list-item">
-        <span>€${v.i} - ${v.n}</span>
-        <span class="del" onclick="buffer[tipo].splice(${i},1);render()">🗑</span>
-      </div>`;
+function render() {
+  lista.innerHTML = "";
+  (buffer[tipo] || []).forEach(function(v, i) {
+    lista.innerHTML += '<div class="list-item"><span>€' + v.i.toFixed(2) + ' - ' + v.n + '</span><span onclick="buffer[tipo].splice(' + i + ',1);render()">❌</span></div>';
   });
 }
 
-function salva(){
+function salva() {
   if(!data.value) return alert("Inserisci la data");
   let m = data.value.slice(0,7);
-  if(!db[m]) db[m]=[];
+  if(!db[m]) db[m] = [];
 
-  let c=+incC.value||0;
-  let p=+incP.value||0;
-  let s=+incS.value||0;
-
-  db[m].push({
-    data:data.value,
-    contanti:c,
-    pos:p,
-    sardex:s,
-    inc:c+p+s,
-    food:[...buffer.food],
-    nonfood:[...buffer.nonfood],
-    extra:[...buffer.extra],
-    acconti:[...buffer.acconti]
-  });
-
-  localStorage.setItem("rd",JSON.stringify(db));
-  buffer={food:[],nonfood:[],extra:[],acconti:[]};
-  mostraStorico();
-}
-
-function toggle(el){ el.style.display=el.style.display==="block"?"none":"block"; }
-
-function modificaIncassi(m,i){
-  let g=db[m][i];
-  let c=prompt("Contanti:",g.contanti); if(c===null)return;
-  let p=prompt("POS:",g.pos); if(p===null)return;
-  let s=prompt("Sardex:",g.sardex); if(s===null)return;
-
-  g.contanti=+c||0;
-  g.pos=+p||0;
-  g.sardex=+s||0;
-  g.inc=g.contanti+g.pos+g.sardex;
-
-  localStorage.setItem("rd",JSON.stringify(db));
-  mostraStorico();
-}
-
-function blocco(t,a,m,i,k){
-  if(!a.length) return "";
-  let s=0,h="";
-  a.forEach((v,j)=>{
-    s+=v.i;
-    h+=`
-      <div class="row">
-        <span>€${v.i} - ${v.n}</span>
-        <span class="del" onclick="elimina('${m}',${i},'${k}',${j})">🗑</span>
-      </div>`;
-  });
-  return `<div class="sep"><strong>${t} €${s}</strong>${h}</div>`;
-}
-
-function elimina(m,i,k,j){
-  if(!confirm("Eliminare voce?"))return;
-  db[m][i][k].splice(j,1);
-  localStorage.setItem("rd",JSON.stringify(db));
-  mostraStorico();
-}
-
-function riepilogoMese(){
-  let m=selMese.value;
-  if(!db[m])return;
-  let inc=0,sp=0;
-  db[m].forEach(g=>{
-    inc+=g.inc;
-    sp+=[...g.food,...g.nonfood,...g.extra].reduce((a,b)=>a+b.i,0);
-  });
-  boxRiepilogo.innerHTML=`<strong>Incassi €${inc} | Spese €${sp} | Utile €${inc-sp}</strong>`;
-}
-
-function mostraStorico(){
-  let h="";
-  Object.keys(db).sort().reverse().forEach(m=>{
-    let d="";
-    db[m].forEach((g,i)=>{
-      let sp=[...g.food,...g.nonfood,...g.extra].reduce((a,b)=>a+b.i,0);
-      d+=`
-      <div class="day-card">
-        <div class="day-header" onclick="toggle(document.getElementById('${m}_${i}'))">
-          ${g.data} <span>€${g.inc-sp}</span>
-        </div>
-        <div class="day-body" id="${m}_${i}">
-          <button class="secondary" onclick="modificaIncassi('${m}',${i})">✏️ Modifica incassi</button>
-          ${blocco("Food",g.food,m,i,"food")}
-          ${blocco("Non Food",g.nonfood,m,i,"nonfood")}
-          ${blocco("Extra",g.extra,m,i,"extra")}
-          ${blocco("Acconti",g.acconti,m,i,"acconti")}
-        </div>
-      </div>`;
-    });
-    h+=`<div class="month-card">
-      <div class="month-header" onclick="toggle(document.getElementById('${m}'))">${m}</div>
-      <div class="month-body" id="${m}">${d}</div>
-    </div>`;
-  });
-
-  storico.innerHTML=h;
-  selMese.innerHTML=Object.keys(db).sort().reverse().map(m=>`<option>${m}</option>`).join("");
-  riepilogoMese();
-}
-
-mostraStorico();
-</script>
-</body>
-</html>
+  let c = +incC.value || 0;
+  let p = +incP.value || 0;
+  let s = +incS.value || 0;
+  
+  let giornata
