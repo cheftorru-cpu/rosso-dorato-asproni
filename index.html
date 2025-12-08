@@ -1,69 +1,3 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-<meta charset="UTF-8">
-<title>Rosso Dorato Asproni</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<style>
-body{background:#111;color:#eee;font-family:system-ui,Arial;padding:15px}
-h1{text-align:center}
-.card{background:#1c1c1c;border-radius:12px;padding:15px;margin-bottom:15px}
-input,button,select{width:100%;padding:10px;margin:6px 0;border:none;border-radius:8px}
-button{background:#b11218;color:#fff;font-weight:600}
-button.secondary{background:#333}
-.month-card,.day-card{border:1px solid #333;border-radius:10px;margin-bottom:10px}
-.month-header,.day-header{padding:10px;background:#222;cursor:pointer;display:flex;justify-content:space-between}
-.month-body,.day-body{display:none;padding:10px}
-.small{color:#bbb;font-size:14px}
-.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);justify-content:center;align-items:center}
-.modal-box{background:#1c1c1c;border-radius:12px;padding:15px;width:90%;max-width:420px}
-.list-item{display:flex;justify-content:space-between;font-size:14px;margin-top:4px}
-.sep{margin-top:8px;border-top:1px dashed #444;padding-top:6px}
-.tot-header{cursor:pointer;font-weight:600}
-.tot-body{display:none;padding-left:10px}
-</style>
-</head>
-
-<body>
-<h1>🍷 Rosso Dorato Asproni</h1>
-
-<div class="card">
-<h2>Nuova giornata</h2>
-<input type="date" id="data">
-<input type="number" id="incC" placeholder="Incassi contanti">
-<input type="number" id="incP" placeholder="Incassi POS">
-<input type="number" id="incS" placeholder="Sardex">
-
-<button onclick="openModal('food')">➕ Food</button>
-<button onclick="openModal('nonfood')">➕ Non Food</button>
-<button onclick="openModal('extra')">➕ Extra</button>
-<button onclick="openModal('acconti')">➕ Acconti</button>
-<button onclick="salva()">💾 Salva giornata</button>
-</div>
-
-<div class="card">
-<h2>Riepilogo mese</h2>
-<select id="selMese" onchange="riepilogoMese()"></select>
-<div id="boxRiepilogo" class="small"></div>
-</div>
-
-<div class="card">
-<h2>Storico giornate</h2>
-<div id="storico"></div>
-</div>
-
-<div class="modal" id="modal">
-  <div class="modal-box">
-    <h3 id="modTit"></h3>
-    <input type="number" id="mImporto" placeholder="Importo">
-    <input type="text" id="mNome" placeholder="Nome / Fornitore / Persona">
-    <button onclick="addVoce()">Aggiungi</button>
-    <div id="lista"></div>
-    <button class="secondary" onclick="closeModal()">Chiudi</button>
-  </div>
-</div>
-
 <script>
 let db = JSON.parse(localStorage.getItem("rd")) || {};
 let buffer = {food:[],nonfood:[],extra:[],acconti:[]};
@@ -115,7 +49,9 @@ function salva(){
   mostraStorico();
 }
 
-function toggle(el){ el.style.display = el.style.display==="block"?"none":"block"; }
+function toggle(el){
+  el.style.display = el.style.display==="block"?"none":"block";
+}
 
 function sommaPerNome(arr,map){
   arr.forEach(v=> map[v.n]=(map[v.n]||0)+v.i );
@@ -144,10 +80,14 @@ function riepilogoMese(){
   let inc=0,c=0,p=0,s=0;
 
   db[m].forEach(g=>{
+    let cc = g.contanti ?? g.inc ?? 0;
+    let pp = g.pos ?? 0;
+    let ss = g.sardex ?? 0;
+
     inc += g.inc || 0;
-    c += g.contanti || 0;
-    p += g.pos || 0;
-    s += g.sardex || 0;
+    c += cc;
+    p += pp;
+    s += ss;
 
     sommaPerNome(g.food||[],tot.food);
     sommaPerNome(g.nonfood||[],tot.nonfood);
@@ -178,13 +118,20 @@ function mostraStorico(){
     let days="";
     db[m].forEach((g,i)=>{
       let sp=[...(g.food||[]),...(g.nonfood||[]),...(g.extra||[])].reduce((t,x)=>t+x.i,0);
+
+      let cc = g.contanti ?? g.inc ?? 0;
+      let pp = g.pos ?? 0;
+      let ss = g.sardex ?? 0;
+
       days+=`
       <div class="day-card">
         <div class="day-header" onclick="toggle(document.getElementById('d${mi}_${i}'))">
           ${formattaData(g.data)} <span>€${g.inc-sp}</span>
         </div>
         <div class="day-body" id="d${mi}_${i}">
-          <div class="small">Contanti €${g.contanti||0} · POS €${g.pos||0} · Sardex €${g.sardex||0}</div>
+          <div class="small">
+            Contanti €${cc} · POS €${pp} · Sardex €${ss}
+          </div>
           ${blocco("Food",g.food||[])}
           ${blocco("Non Food",g.nonfood||[])}
           ${blocco("Extra",g.extra||[])}
@@ -192,12 +139,14 @@ function mostraStorico(){
         </div>
       </div>`;
     });
+
     html+=`
     <div class="month-card">
       <div class="month-header" onclick="toggle(document.getElementById('m${mi}'))">${m}</div>
       <div class="month-body" id="m${mi}">${days}</div>
     </div>`;
   });
+
   storico.innerHTML=html;
   selMese.innerHTML = Object.keys(db).sort().reverse().map(m=>`<option>${m}</option>`).join("");
   riepilogoMese();
@@ -215,6 +164,4 @@ function formattaData(d){
 }
 
 mostraStorico();
-</script>
-</body>
-</html>
+      </script>
