@@ -25,6 +25,11 @@ button.secondary{background:#333}
 .action span{cursor:pointer;margin-left:12px;font-size:20px;padding:4px;touch-action:manipulation}
 .tot-row,.fatt-row{padding:8px 0;font-size:16px}
 .debito{background:#ff6b35;color:#fff;padding:4px 8px;border-radius:4px;font-size:14px}
+@media (max-width:480px){
+  body{padding:10px}
+  .card{padding:18px}
+  .action span{margin-left:8px;font-size:18px}
+}
 </style>
 </head>
 
@@ -46,7 +51,8 @@ button.secondary{background:#333}
 </div>
 
 <div class="card">
-<h2>Fatture aperte</h2>
+<h2>📋 Fatture aperte</h2>
+<button class="secondary" onclick="nuovaFattura()" style="margin-bottom:10px">➕ Nuova fattura</button>
 <div id="fattureAperte"></div>
 </div>
 
@@ -91,17 +97,28 @@ function openModal(t){
   modTit.innerText="Aggiungi "+t;
   modal.style.display="flex";
   render();
+  if(t==="fatture"){
+    mNome.style.display="none";
+    mImporto.placeholder="Seleziona fattura da sezione 'Fatture aperte'";
+  } else {
+    mNome.style.display="block";
+    mImporto.placeholder="Importo";
+  }
 }
 
 function closeModal(){ modal.style.display="none"; }
 
 function salvaVoce(){
-  if(+mImporto.value<=0) return;
+  if(+mImporto.value<=0) return alert("Importo non valido");
+  
   if(edit){
     let v=db[edit.m][edit.gi][edit.tipo][edit.i];
     v.i=+mImporto.value; v.n=mNome.value||"Senza nome";
     localStorage.setItem("rd",JSON.stringify(db));
     edit=null; mostraStorico();
+  }else if(tipo==="fatture"){
+    alert("Per le fatture usa la sezione 'Fatture aperte' o il bottone 'Paga acconto'");
+    return;
   }else{
     buffer[tipo].push({i:+mImporto.value,n:mNome.value||"Senza nome"});
   }
@@ -122,18 +139,23 @@ function salva(){
 
   let c=+incC.value||0,p=+incP.value||0,s=+incS.value||0;
   let giornata = {
-    data:data.value, contanti:c,pos:p,sardex:s,inc:c+p+s,
-    food:[...buffer.food], nonfood:[...buffer.nonfood],
-    extra:[...buffer.extra], acconti:[...buffer.acconti]
+    data:data.value,
+    contanti:c,pos:p,sardex:s,inc:c+p+s,
+    food:[...buffer.food],
+    nonfood:[...buffer.nonfood],
+    extra:[...buffer.extra],
+    acconti:[...buffer.acconti],
+    fatturePagate:[]
   };
 
-  // Aggiungi pagamenti fatture come spese extra
+  // Processa pagamenti fatture dal buffer (solo se hanno ID valido)
   buffer.fatture.forEach(f=>{
     if(f.id && fatture[f.id]){
       let resto = fatture[f.id].tot - fatture[f.id].pagato;
       let pagato = Math.min(f.i, resto);
       if(pagato>0){
         giornata.extra.push({i:pagato,n:`Pagamento fattura ${fatture[f.id].fornitore} (${fatture[f.id].id})`});
+        giornata.fatturePagate.push({i:pagato,n:`Pagamento fattura ${fatture[f.id].fornitore} (${fatture[f.id].id})`});
         fatture[f.id].pagato += pagato;
         if(fatture[f.id].pagato >= fatture[f.id].tot) delete fatture[f.id];
       }
@@ -147,50 +169,54 @@ function salva(){
   buffer={food:[],nonfood:[],extra:[],acconti:[],fatture:[]};
   data.value=""; incC.value=""; incP.value=""; incS.value="";
   mostraFatture(); mostraStorico(); riepilogoMese();
+  alert("Giornata salvata!");
 }
 
 function nuovaFattura(){
-  let id = 'F'+Date.now();
   let tot = prompt("Totale fattura:");
   let forn = prompt("Fornitore:");
-  if(tot && forn){
+  if(tot && forn && !isNaN(tot)){
+    let id = 'F'+Date.now();
     fatture[id] = {id,tot:+tot,fornitore:forn,pagato:0};
     localStorage.setItem("fatture",JSON.stringify(fatture));
     mostraFatture();
+  } else {
+    alert("Inserisci totale e fornitore validi");
   }
 }
 
 function pagaFattura(id,importo){
   if(!fatture[id]) return;
   let resto = fatture[id].tot - fatture[id].pagato;
-  let daPagare = Math.min(importo||0, resto);
+  let daPagare = Math.min(+importo||0, resto);
   if(daPagare>0){
     fatture[id].pagato += daPagare;
     if(fatture[id].pagato >= fatture[id].tot) delete fatture[id];
     localStorage.setItem("fatture",JSON.stringify(fatture));
     mostraFatture();
+    alert(`Pagato acconto €${daPagare} su fattura ${fatture[id]?.id || id}`);
   }
 }
 
 function mostraFatture(){
   let h="";
-  Object.values(fatture).forEach(f=>{
+  Object.values(fatture).sort((a,b)=>b.tot-a.tot).forEach(f=>{
     let resto = f.tot - f.pagato;
     h+=`
     <div class="fattura-card">
       <div class="fattura-header" onclick="toggle(this.nextElementSibling)">
-        ${f.fornitore} (${f.id}) <span>€${resto} resto <span class="debito">Da pagare</span></span>
+        ${f.fornitore} (${f.id}) <span>€${resto.toFixed(2)} resto <span class="debito">Da pagare</span></span>
       </div>
       <div class="fattura-body">
-        <div class="fatt-row">Totale: €${f.tot}</div>
-        <div class="fatt-row">Pagato: €${f.pagato}</div>
-        <div class="fatt-row">Resto: €${resto}</div>
+        <div class="fatt-row">Totale: €${f.tot.toFixed(2)}</div>
+        <div class="fatt-row">Pagato: €${f.pagato.toFixed(2)}</div>
+        <div class="fatt-row">Resto: €${resto.toFixed(2)}</div>
         <input type="number" id="p${f.id}" placeholder="Acconto oggi" style="margin:10px 0">
-        <button onclick="pagaFattura('${f.id}',+document.getElementById('p${f.id}').value)">💰 Paga acconto</button>
+        <button onclick="pagaFattura('${f.id}',document.getElementById('p${f.id}').value)">💰 Paga acconto</button>
       </div>
     </div>`;
   });
-  fattureAperte.innerHTML = Object.keys(fatture).length ? h : '<div class="small">Nessuna fattura aperta</div>';
+  fattureAperte.innerHTML = Object.keys(fatture).length ? h : '<div class="small">Nessuna fattura aperta ✓</div>';
 }
 
 function toggle(el){ el.style.display=el.style.display==="block"?"none":"block"; }
@@ -215,10 +241,10 @@ function riepilogoMese(){
   
   boxRiepilogo.innerHTML=`
     <div class="tot-header" onclick="toggle(this.nextElementSibling)">
-      📊 Totali mese: Incassi €${tot.inc} | Spese €${tot.sp} | Netto €${tot.net}
+      📊 Totali mese: Incassi €${tot.inc.toFixed(2)} | Spese €${tot.sp.toFixed(2)} | Netto €${tot.net.toFixed(2)}
     </div>
     <div class="tot-body">
-      ${db[m].map((g,i)=>`<div class="tot-header" onclick="toggle(this.nextElementSibling)">${g.data}: €${g.inc} incassi | €${g.net||g.inc-[...g.food,...g.nonfood,...g.extra].reduce((t,x)=>t+x.i,0)} netto</div><div class="tot-body"><div class="tot-row"><strong>Contanti:</strong> €${g.contanti}</div><div class="tot-row"><strong>POS:</strong> €${g.pos}</div><div class="tot-row"><strong>Sardex:</strong> €${g.sardex}</div></div>`).join('')}
+      ${db[m].map((g,i)=>`<div class="tot-header" onclick="toggle(this.nextElementSibling)">${g.data}: €${g.inc.toFixed(2)} incassi | €${(g.inc-[...g.food,...g.nonfood,...g.extra].reduce((t,x)=>t+x.i,0)).toFixed(2)} netto</div><div class="tot-body"><div class="tot-row"><strong>Contanti:</strong> €${g.contanti.toFixed(2)}</div><div class="tot-row"><strong>POS:</strong> €${g.pos.toFixed(2)}</div><div class="tot-row"><strong>Sardex:</strong> €${g.sardex.toFixed(2)}</div></div>`).join('')}
     </div>`;
 }
 
@@ -230,24 +256,40 @@ function mostraStorico(){
     db[m].forEach((g,i)=>{
       let sp=[...g.food,...g.nonfood,...g.extra].reduce((t,x)=>t+x.i,0);
       let net=g.inc-sp;
-      d+=`<div class="day-card"><div class="day-header" onclick="toggle(document.getElementById('d${m}${i}'))">${g.data} <span>€${net} netto (inc:€${g.inc} sp:€${sp})</span></div><div class="day-body" id="d${m}${i}">${blocco("Food",g.food,m,i,"food")}${blocco("Non Food",g.nonfood,m,i,"nonfood")}${blocco("Extra",g.extra,m,i,"extra")}${blocco("Acconti",g.acconti,m,i,"acconti")}</div></div>`;
+      d+=`
+      <div class="day-card">
+        <div class="day-header" onclick="toggle(document.getElementById('d${m}${i}'))">
+          ${g.data} <span>€${net.toFixed(2)} netto (inc:€${g.inc.toFixed(2)} sp:€${sp.toFixed(2)})</span>
+        </div>
+        <div class="day-body" id="d${m}${i}">
+          ${blocco("Food",g.food,m,i,"food")}
+          ${blocco("Non Food",g.nonfood,m,i,"nonfood")}
+          ${blocco("Extra",g.extra,m,i,"extra")}
+          ${blocco("Acconti",g.acconti,m,i,"acconti")}
+          ${blocco("Fatture Pagate",g.fatturePagate || [],m,i,"fatturePagate")}
+        </div>
+      </div>`;
     });
     h+=`<div class="month-card"><div class="month-header" onclick="toggle(this.nextElementSibling)">${m}</div><div class="month-body">${d}</div></div>`;
   });
   storico.innerHTML=h;
-  selMese.selectedIndex=0; riepilogoMese();
+  if(selMese.options.length) selMese.selectedIndex=0;
+  riepilogoMese();
 }
 
 function blocco(t,a,m,gi,tipo){
   let s=0,h="";
-  a.forEach((v,i)=>{ s+=v.i; h+=`<div class="row"><div>€${v.i} - ${v.n}</div><div class="action"><span onclick="modificaVoce('${m}',${gi},'${tipo}',${i})" title="Modifica">✏️</span><span onclick="eliminaVoce('${m}',${gi},'${tipo}',${i})" title="Cancella">🗑</span></div></div>`; });
-  return h?`<div class="sep"><strong>${t} €${s}</strong>${h}</div>`:"";
+  a.forEach((v,i)=>{
+    s+=v.i;
+    h+=`<div class="row"><div>€${v.i.toFixed(2)} - ${v.n}</div><div class="action"><span onclick="modificaVoce('${m}',${gi},'${tipo}',${i})" title="Modifica">✏️</span><span onclick="eliminaVoce('${m}',${gi},'${tipo}',${i})" title="Cancella">🗑</span></div></div>`;
+  });
+  return h?`<div class="sep"><strong>${t} €${s.toFixed(2)}</strong>${h}</div>`:"";
 }
 
 function modificaVoce(m,gi,tipo,i){
   edit={m,gi,tipo,i};
   let v=db[m][gi][tipo][i];
-  mImporto.value=v.i; mNome.value=v.n;
+  mImporto.value=v.i; mNome.value=v.n; mNome.style.display="block";
   btnSave.innerText="Salva modifica"; modTit.innerText="Modifica "+tipo;
   modal.style.display="flex";
 }
