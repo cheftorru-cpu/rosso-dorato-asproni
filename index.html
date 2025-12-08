@@ -7,34 +7,25 @@
 
 <style>
 body{background:#111;color:#eee;font-family:system-ui,Arial;padding:15px;min-height:100vh}
-h1{text-align:center;font-size:1.4em;margin:10px 0}
-.card{background:#1c1c1c;border-radius:12px;padding:20px;margin-bottom:15px}
-input,button,select{width:100%;padding:14px;margin:8px 0;border:none;border-radius:8px;font-size:16px;box-sizing:border-box}
-button{background:#b11218;color:#fff;font-weight:600;font-size:16px;touch-action:manipulation}
+h1{text-align:center}
+.card{background:#1c1c1c;border-radius:12px;padding:15px;margin-bottom:15px}
+input,button,select{width:100%;padding:10px;margin:6px 0;border:none;border-radius:8px;box-sizing:border-box}
+button{background:#b11218;color:#fff;font-weight:600}
 button.secondary{background:#333}
-.month-card,.day-card,.fattura-card{border:1px solid #333;border-radius:10px;margin-bottom:10px;overflow:hidden}
-.month-header,.day-header,.fattura-header{padding:15px;background:#222;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-weight:600;touch-action:manipulation}
-.day-header .action{opacity:0;transition:opacity .3s}
-.day-card:hover .day-header .action{opacity:1}
-.month-body,.day-body,.tot-body,.fattura-body{display:none;padding:15px}
+.month-card,.day-card{border:1px solid #333;border-radius:10px;margin-bottom:10px}
+.month-header,.day-header{padding:10px;background:#222;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.month-body,.day-body{display:none;padding:10px}
 .small{color:#bbb;font-size:14px}
-.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);justify-content:center;align-items:center;padding:20px;box-sizing:border-box}
-.modal-box{background:#1c1c1c;border-radius:16px;padding:25px;width:95%;max-width:420px;max-height:80vh;overflow-y:auto}
-.list-item{display:flex;justify-content:space-between;font-size:16px;padding:12px 0;border-bottom:1px solid #333}
-.sep{margin-top:12px;border-top:1px dashed #444;padding-top:12px}
-.tot-header,.fattura-header{cursor:pointer;font-weight:600;padding:12px;background:#1a1a1a;border-radius:8px;margin:6px 0;display:flex;justify-content:space-between;touch-action:manipulation}
-.row{display:flex;justify-content:space-between;align-items:center;padding:8px 0}
-.action span{cursor:pointer;margin-left:8px;font-size:18px;padding:4px;touch-action:manipulation}
-.tot-row,.fatt-row{padding:8px 0;font-size:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap}
-.tot-row .action{margin-top:4px}
-.debito{background:#ff6b35;color:#fff;padding:4px 8px;border-radius:4px;font-size:14px}
-@media (max-width:480px){
-  body{padding:10px}
-  .card{padding:18px}
-  .action span{margin-left:6px;font-size:16px}
-  .day-header .action{opacity:1}
-  .tot-row .action{margin-top:2px;font-size:16px}
-}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);justify-content:center;align-items:center}
+.modal-box{background:#1c1c1c;border-radius:12px;padding:15px;width:90%;max-width:420px}
+.list-item{display:flex;justify-content:space-between;font-size:14px;margin-top:4px}
+.sep{margin-top:8px;border-top:1px dashed #444;padding-top:6px}
+.tot-header{cursor:pointer;font-weight:600}
+.tot-body{display:none;padding-left:10px}
+.row{display:flex;justify-content:space-between;align-items:center}
+.action span{cursor:pointer;margin-left:8px}
+.del{cursor:pointer;color:#f55}
+small.note{display:block;color:#999;margin-top:6px}
 </style>
 </head>
 
@@ -42,37 +33,35 @@ button.secondary{background:#333}
 <h1>🍷 Rosso Dorato Asproni</h1>
 
 <div class="card">
-<h2>Nuova giornata</h2>
-<input type="date" id="data">
-<input type="number" id="incC" placeholder="Incassi contanti">
-<input type="number" id="incP" placeholder="Incassi POS">
-<input type="number" id="incS" placeholder="Sardex">
-<button onclick="openModal('food')">➕ Food</button>
-<button onclick="openModal('nonfood')">➕ Non Food</button>
-<button onclick="openModal('extra')">➕ Extra</button>
-<button onclick="openModal('acconti')">➕ Acconti</button>
-<button onclick="openModal('fatture')">➕ Fatture Merce</button>
-<button onclick="salva()">💾 Salva giornata</button>
+  <h2>Nuova giornata</h2>
+  <input type="date" id="data">
+  <input type="number" id="incC" placeholder="Incassi contanti">
+  <input type="number" id="incP" placeholder="Incassi POS">
+  <input type="number" id="incS" placeholder="Sardex">
+  <div style="display:flex;gap:8px">
+    <button onclick="openModal('food')" style="flex:1">➕ Food</button>
+    <button onclick="openModal('nonfood')" style="flex:1">➕ Non Food</button>
+  </div>
+  <div style="display:flex;gap:8px">
+    <button onclick="openModal('extra')" style="flex:1">➕ Extra</button>
+    <button onclick="openModal('acconti')" style="flex:1">➕ Acconti</button>
+  </div>
+  <button onclick="salva()">💾 Salva giornata</button>
+  <small class="note">Dopo il salvataggio i singoli importi hanno il cestino per cancellare/modificare.</small>
 </div>
 
 <div class="card">
-<h2>📋 Fatture aperte</h2>
-<button class="secondary" onclick="nuovaFattura()" style="margin-bottom:10px">➕ Nuova fattura</button>
-<div id="fattureAperte"></div>
+  <h2>Riepilogo mese</h2>
+  <select id="selMese" onchange="riepilogoMese()"></select>
+  <div id="boxRiepilogo" class="small"></div>
 </div>
 
 <div class="card">
-<h2>Riepilogo mese</h2>
-<select id="selMese" onchange="riepilogoMese()"></select>
-<button class="secondary" onclick="toggleAllDays()">📊 Tutti i giorni</button>
-<div id="boxRiepilogo" class="small"></div>
+  <h2>Storico giornate</h2>
+  <div id="storico"></div>
 </div>
 
-<div class="card">
-<h2>Storico giornate</h2>
-<div id="storico"></div>
-</div>
-
+<!-- MODALE -->
 <div class="modal" id="modal">
   <div class="modal-box">
     <h3 id="modTit"></h3>
@@ -85,74 +74,228 @@ button.secondary{background:#333}
 </div>
 
 <script>
-let db = {}; 
-let fatture = {};
-try {
-  db = JSON.parse(localStorage.getItem("rd")) || {};
-  fatture = JSON.parse(localStorage.getItem("fatture")) || {};
-} catch(e) {
-  db = {}; 
-  fatture = {};
-}
-let buffer = {food:[],nonfood:[],extra:[],acconti:[],fatture:[]};
-let tipo = "";
-let edit = null;
+// riferimenti DOM (più sicuro che usare variabili implicite)
+const modTit = document.getElementById('modTit');
+const mImporto = document.getElementById('mImporto');
+const mNome = document.getElementById('mNome');
+const lista = document.getElementById('lista');
+const btnSave = document.getElementById('btnSave');
+const selMese = document.getElementById('selMese');
+const boxRiepilogo = document.getElementById('boxRiepilogo');
+const storicoEl = document.getElementById('storico');
 
-function openModal(t) {
+let db = JSON.parse(localStorage.getItem("rd")) || {};
+let buffer = {food:[],nonfood:[],extra:[],acconti:[]};
+let tipo="";
+let edit = null; // {m,gi,tipo,i}
+
+function openModal(t){
   tipo = t;
   edit = null;
   btnSave.innerText = "Aggiungi";
   modTit.innerText = "Aggiungi " + t;
-  modal.style.display = "flex";
+  mImporto.value = "";
+  mNome.value = "";
+  lista.innerHTML = "";
   render();
-  if(t === "fatture") {
-    mNome.style.display = "none";
-    mImporto.placeholder = "Seleziona fattura da sezione 'Fatture aperte'";
-  } else {
-    mNome.style.display = "block";
-    mImporto.placeholder = "Importo";
-  }
+  document.getElementById('modal').style.display = 'flex';
 }
+function closeModal(){ document.getElementById('modal').style.display = 'none'; }
 
-function closeModal() {
-  modal.style.display = "none";
-}
+function salvaVoce(){
+  const val = Number(mImporto.value || 0);
+  if(val <= 0) { alert("Importo non valido"); return; }
 
-function salvaVoce() {
-  if(+mImporto.value <= 0) return alert("Importo non valido");
-  
-  if(edit) {
-    let v = db[edit.m][edit.gi][edit.tipo][edit.i];
-    v.i = +mImporto.value;
+  if(edit){
+    // modifica voce esistente
+    const v = db[edit.m][edit.gi][edit.tipo][edit.i];
+    v.i = val;
     v.n = mNome.value || "Senza nome";
     localStorage.setItem("rd", JSON.stringify(db));
     edit = null;
+    closeModal();
     mostraStorico();
-  } else if(tipo === "fatture") {
-    alert("Per le fatture usa la sezione 'Fatture aperte' o il bottone 'Paga acconto'");
+    aggiornaMesi();
     return;
-  } else {
-    buffer[tipo].push({i: +mImporto.value, n: mNome.value || "Senza nome"});
   }
-  mImporto.value = "";
-  mNome.value = "";
+
+  // aggiungi a buffer (giornata non ancora salvata)
+  buffer[tipo].push({i: val, n: mNome.value || "Senza nome"});
+  mImporto.value = ""; mNome.value = "";
   render();
 }
 
-function render() {
+function render(){
   lista.innerHTML = "";
-  (buffer[tipo] || []).forEach(function(v, i) {
-    lista.innerHTML += '<div class="list-item"><span>€' + v.i.toFixed(2) + ' - ' + v.n + '</span><span onclick="buffer[tipo].splice(' + i + ',1);render()">❌</span></div>';
+  const arr = buffer[tipo] || [];
+  arr.forEach((v,i)=>{
+    const r = document.createElement('div');
+    r.className = 'list-item';
+    r.innerHTML = `<div>€${v.i.toFixed(2)} - ${v.n}</div>
+      <div><span style="cursor:pointer" onclick="buffer['${tipo}'].splice(${i},1); render()">❌</span></div>`;
+    lista.appendChild(r);
   });
 }
 
-function salva() {
-  if(!data.value) return alert("Inserisci la data");
-  let m = data.value.slice(0,7);
+function salva(){
+  const data = document.getElementById('data').value;
+  if(!data) return alert("Inserisci la data");
+  const m = data.slice(0,7); // yyyy-mm
   if(!db[m]) db[m] = [];
 
-  let c = +incC.value || 0;
-  let p = +incP.value || 0;
-  let s = +incS.value || 0;
-  
-  let giornata
+  const c = Number(document.getElementById('incC').value || 0);
+  const p = Number(document.getElementById('incP').value || 0);
+  const s = Number(document.getElementById('incS').value || 0);
+
+  const giornata = {
+    data,
+    contanti: c, pos: p, sardex: s, inc: c+p+s,
+    food: [...buffer.food],
+    nonfood: [...buffer.nonfood],
+    extra: [...buffer.extra],
+    acconti: [...buffer.acconti]
+  };
+
+  db[m].push(giornata);
+  localStorage.setItem("rd", JSON.stringify(db));
+
+  // reset form + buffer
+  buffer = {food:[],nonfood:[],extra:[],acconti:[]};
+  document.getElementById('data').value = "";
+  document.getElementById('incC').value = "";
+  document.getElementById('incP').value = "";
+  document.getElementById('incS').value = "";
+
+  aggiornaMesi();
+  mostraStorico();
+  riepilogoMese();
+  alert("Giornata salvata ✅");
+}
+
+function modificaVoce(m,gi,tipo,i){
+  edit = {m,gi,tipo,i};
+  const v = db[m][gi][tipo][i];
+  mImporto.value = v.i;
+  mNome.value = v.n;
+  btnSave.innerText = "Salva modifica";
+  modTit.innerText = "Modifica " + tipo;
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function eliminaVoce(m,gi,tipo,i){
+  if(!confirm("Eliminare voce?")) return;
+  db[m][gi][tipo].splice(i,1);
+  // se la giornata è vuota si potrebbe cancellare l'intera giornata: non lo faccio automaticamente
+  localStorage.setItem("rd", JSON.stringify(db));
+  mostraStorico();
+  riepilogoMese();
+  aggiornaMesi();
+}
+
+function toggle(el){ el.style.display = el.style.display === "block" ? "none" : "block"; }
+
+function aggiornaMesi(){
+  // popola il select dei mesi
+  selMese.innerHTML = "";
+  const keys = Object.keys(db).sort().reverse();
+  keys.forEach(k => selMese.options.add(new Option(k,k)));
+  if(keys.length) selMese.selectedIndex = 0;
+  // aggiorna riepilogo
+  riepilogoMese();
+}
+
+function blocco(t,arr,m,gi,tipo){
+  if(!arr || !arr.length) return '';
+  let s = 0;
+  let html = '';
+  arr.forEach((v,i)=>{
+    s += v.i;
+    html += `<div class="row"><div>€${v.i.toFixed(2)} - ${v.n}</div>
+      <div class="action"><span onclick="modificaVoce('${m}',${gi},'${tipo}',${i})">✏️</span>
+      <span onclick="eliminaVoce('${m}',${gi},'${tipo}',${i})">🗑</span></div></div>`;
+  });
+  return `<div class="sep"><strong>${t} €${s.toFixed(2)}</strong>${html}</div>`;
+}
+
+function bloccoTot(id,title,obj){
+  const keys = Object.keys(obj||{});
+  const s = keys.reduce((a,k)=>a + (obj[k]||0), 0);
+  const lines = keys.map(k=>`<div>• ${k}: €${(obj[k]||0).toFixed(2)}</div>`).join('');
+  return `<div class="sep"><div class="tot-header" onclick="toggle(document.getElementById('${id}'))">${title} €${s.toFixed(2)}</div>
+    <div class="tot-body" id="${id}">${lines}</div></div>`;
+}
+
+function riepilogoMese(){
+  const m = selMese.value;
+  if(!m || !db[m]) { boxRiepilogo.innerHTML = ''; return; }
+
+  const totNames = {food:{}, nonfood:{}, extra:{}, acconti:{}};
+  let inc = 0, cont=0, pos=0, sard=0;
+
+  db[m].forEach(g=>{
+    inc += g.inc || 0;
+    cont += g.contanti || 0;
+    pos += g.pos || 0;
+    sard += g.sardex || 0;
+    sommaPerNome(g.food, totNames.food);
+    sommaPerNome(g.nonfood, totNames.nonfood);
+    sommaPerNome(g.extra, totNames.extra);
+    sommaPerNome(g.acconti, totNames.acconti);
+  });
+
+  const sp = [...Object.values(totNames.food), ...Object.values(totNames.nonfood), ...Object.values(totNames.extra)]
+    .reduce((a,b)=>a+b,0);
+
+  boxRiepilogo.innerHTML = `
+    <div class="sep"><strong>Incassi Totali €${inc.toFixed(2)}</strong></div>
+    ${bloccoTot('inc_dett','Dettaglio incassi',{Contanti:cont,POS:pos,Sardex:sard})}
+    ${bloccoTot('f_dett','Food',totNames.food)}
+    ${bloccoTot('nf_dett','Non Food',totNames.nonfood)}
+    ${bloccoTot('e_dett','Extra',totNames.extra)}
+    ${bloccoTot('a_dett','Acconti',totNames.acconti)}
+    <div class="sep"><strong>Utile mese €${(inc - sp).toFixed(2)}</strong></div>
+  `;
+}
+
+function sommaPerNome(arr,map){
+  (arr||[]).forEach(v => { map[v.n] = (map[v.n]||0) + (v.i||0); });
+}
+
+function idify(m,i){
+  return (m.replace(/[^a-zA-Z0-9]/g,'_')) + '_' + i;
+}
+
+function mostraStorico(){
+  let html = '';
+  const months = Object.keys(db).sort().reverse();
+  months.forEach(m=>{
+    let days = '';
+    db[m].forEach((g,i)=>{
+      const sp = ([...(g.food||[]), ...(g.nonfood||[]), ...(g.extra||[])]).reduce((t,x)=>t + (x.i||0),0);
+      const net = (g.inc||0) - sp;
+      const id = idify(m,i);
+      days += `
+      <div class="day-card">
+        <div class="day-header" onclick="toggle(document.getElementById('${id}'))">
+          ${g.data} <span>€${net.toFixed(2)} netto (inc:€${(g.inc||0).toFixed(2)} sp:€${sp.toFixed(2)})</span>
+        </div>
+        <div class="day-body" id="${id}">
+          ${blocco('Food', g.food, m, i, 'food')}
+          ${blocco('Non Food', g.nonfood, m, i, 'nonfood')}
+          ${blocco('Extra', g.extra, m, i, 'extra')}
+          ${blocco('Acconti', g.acconti, m, i, 'acconti')}
+        </div>
+      </div>`;
+    });
+    html += `<div class="month-card"><div class="month-header" onclick="toggle(this.nextElementSibling)">${m}</div><div class="month-body">${days}</div></div>`;
+  });
+
+  storicoEl.innerHTML = html;
+  aggiornaMesi();
+}
+
+// inizializza la pagina
+mostraStorico();
+</script>
+</body>
+</html>
