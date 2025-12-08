@@ -24,6 +24,8 @@ button.secondary{background:#333}
 .small-btn{background:#333;color:#fff;padding:8px;border-radius:8px;border:none;width:100%;margin-top:8px}
 .info{color:#bbb;font-size:13px}
 .debito{background:#ff6b35;color:#fff;padding:4px 8px;border-radius:4px;font-size:12px}
+.tot-header{cursor:pointer;font-weight:600;background:#1a1a1a;padding:8px;border-radius:6px;margin:6px 0}
+.tot-body{display:none;padding:8px}
 </style>
 </head>
 <body>
@@ -84,7 +86,7 @@ button.secondary{background:#333}
 
 <script>
 /* ===== dati iniziali (localStorage) ===== */
-let db = {};        // giornate per mese: { "2025-12": [ {data,contanti,pos,sardex,inc,food:[],... } ] }
+let db = {};        // giornate per mese: { "YYYY-MM": [ {data,contanti,pos,sardex,inc,food:[],... } ] }
 let fatture = {};   // fatture aperte: { id: {id,fornitore,tot,pagato} }
 try {
   db = JSON.parse(localStorage.getItem("rd")) || {};
@@ -145,7 +147,7 @@ function salva(){
     contanti: c, pos: p, sardex: s, inc: c+p+s,
     food: [...buffer.food], nonfood: [...buffer.nonfood],
     extra: [...buffer.extra], acconti: [...buffer.acconti],
-    fatturePagate: [] // qui verranno aggiunti pagamenti direttamente registrati come spesa
+    fatturePagate: []
   };
 
   db[m].push(giornata);
@@ -199,7 +201,7 @@ function mostraFatture(){
   fattureAperte.innerHTML = out;
 }
 
-/* paga acconto: chiede importo e registra la spesa nella giornata selezionata (o oggi se non selezionata) */
+/* paga acconto: registra la spesa nella giornata scelta (o oggi se non scelta) */
 function pagaAccontoPrompt(id){
   const input = document.getElementById('p_' + id);
   let val = input ? input.value : "";
@@ -208,21 +210,21 @@ function pagaAccontoPrompt(id){
   if(isNaN(val) || +val <= 0) return alert("Importo non valido");
   const pag = +val;
 
-  // scegli la data in cui registrare la spesa
+  // scegli la data in cui registrare la spesa (usa campo 'data' se impostato, altrimenti oggi)
   const chosenDate = data.value || new Date().toISOString().slice(0,10);
   const m = chosenDate.slice(0,7);
   if(!db[m]) db[m] = [];
 
-  // crea (se non esiste) una giornata con inc 0 se non ci sono giornate per quel giorno
-  const giornoIndex = db[m].findIndex(g => g.data === chosenDate);
-  if(giornoIndex === -1){
+  // crea (se non esiste) una giornata per quella data
+  let gi = db[m].findIndex(g => g.data === chosenDate);
+  if(gi === -1){
     db[m].push({
       data: chosenDate,
       contanti: 0, pos: 0, sardex: 0, inc: 0,
       food: [], nonfood: [], extra: [], acconti: [], fatturePagate: []
     });
+    gi = db[m].findIndex(g => g.data === chosenDate);
   }
-  const gi = db[m].findIndex(g => g.data === chosenDate);
 
   // registra pagamento come spesa "Extra" e come voce fatturePagate
   const descr = `Pagamento fattura ${fatture[id].fornitore} (${id})`;
@@ -230,11 +232,12 @@ function pagaAccontoPrompt(id){
   db[m][gi].fatturePagate = db[m][gi].fatturePagate || [];
   db[m][gi].fatturePagate.push({ i: pag, n: descr, id });
 
-  // aggiorna fattura (pagato) e rimuove se saldo = 0
+  // aggiorna fattura (pagato) e rimuove se saldata
   fatture[id].pagato = (fatture[id].pagato || 0) + pag;
   if(fatture[id].pagato >= fatture[id].tot) {
     delete fatture[id];
   }
+
   // salva
   localStorage.setItem("rd", JSON.stringify(db));
   localStorage.setItem("fatture", JSON.stringify(fatture));
@@ -242,7 +245,6 @@ function pagaAccontoPrompt(id){
   alert("Pagamento registrato");
 }
 
-/* elimina fattura con conferma */
 function eliminaFatturaConfirm(id){
   if(!confirm("Eliminare fattura aperta?")) return;
   delete fatture[id];
