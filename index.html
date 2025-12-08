@@ -16,9 +16,6 @@ button.secondary{background:#333}
 .month-header,.day-header{padding:10px;background:#222;cursor:pointer;display:flex;justify-content:space-between}
 .month-body,.day-body{display:none;padding:10px}
 .small{color:#bbb;font-size:14px}
-.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);justify-content:center;align-items:center}
-.modal-box{background:#1c1c1c;border-radius:12px;padding:15px;width:90%;max-width:420px}
-.list-item{display:flex;justify-content:space-between;font-size:14px;margin-top:4px}
 .sep{margin-top:8px;border-top:1px dashed #444;padding-top:6px}
 .tot-header{cursor:pointer;font-weight:600}
 .tot-body{display:none;padding-left:10px}
@@ -34,7 +31,6 @@ button.secondary{background:#333}
 <input type="number" id="incC" placeholder="Incassi contanti">
 <input type="number" id="incP" placeholder="Incassi POS">
 <input type="number" id="incS" placeholder="Sardex">
-
 <button onclick="openModal('food')">➕ Food</button>
 <button onclick="openModal('nonfood')">➕ Non Food</button>
 <button onclick="openModal('extra')">➕ Extra</button>
@@ -53,113 +49,76 @@ button.secondary{background:#333}
 <div id="storico"></div>
 </div>
 
-<!-- MODALE -->
-<div class="modal" id="modal">
-  <div class="modal-box">
-    <h3 id="modTit"></h3>
-    <input type="number" id="mImporto" placeholder="Importo">
-    <input type="text" id="mNome" placeholder="Nome / Fornitore / Persona">
-    <button onclick="addVoce()">Aggiungi</button>
-    <div id="lista"></div>
-    <button class="secondary" onclick="closeModal()">Chiudi</button>
-  </div>
-</div>
-
 <script>
 let db = JSON.parse(localStorage.getItem("rd")) || {};
-let buffer = {food:[],nonfood:[],extra:[],acconti:[]};
-let tipo="";
 
-function openModal(t){ tipo=t; modTit.innerText="Aggiungi "+t; modal.style.display="flex"; render(); }
-function closeModal(){ modal.style.display="none"; }
-
-function addVoce(){
-  if(+mImporto.value<=0) return;
-  buffer[tipo].push({i:+mImporto.value,n:mNome.value||"Senza nome"});
-  mImporto.value=""; mNome.value="";
-  render();
+function toggle(el){
+  el.style.display = el.style.display==="block" ? "none" : "block";
 }
-function render(){
-  lista.innerHTML="";
-  buffer[tipo].forEach((v,i)=>{
-    lista.innerHTML+=`
-    <div class="list-item">
-      <span>€${v.i} - ${v.n}</span>
-      <span onclick="buffer[tipo].splice(${i},1);render()">❌</span>
-    </div>`;
+
+function sommaPerNome(arr,map){
+  (arr||[]).forEach(v=>{
+    map[v.n]=(map[v.n]||0)+v.i;
   });
 }
 
-function salva(){
-  if(!data.value) return alert("Inserisci la data");
-  let m=data.value.slice(0,7);
-  if(!db[m]) db[m]=[];
-
-  let c=+incC.value||0;
-  let p=+incP.value||0;
-  let s=+incS.value||0;
-
-  db[m].push({
-    data:data.value,
-    contanti:c,
-    pos:p,
-    sardex:s,
-    inc:c+p+s,
-    food:[...buffer.food],
-    nonfood:[...buffer.nonfood],
-    extra:[...buffer.extra],
-    acconti:[...buffer.acconti]
+function blocco(t,a){
+  if(!a || !a.length) return `<div class="sep"><strong>${t} €0</strong></div>`;
+  let s=0,h="";
+  a.forEach(v=>{
+    s+=v.i;
+    h+=`<div>• ${v.n}: €${v.i}</div>`;
   });
-
-  localStorage.setItem("rd",JSON.stringify(db));
-  buffer={food:[],nonfood:[],extra:[],acconti:[]};
-  mostraStorico();
+  return `<div class="sep"><strong>${t} €${s}</strong>${h}</div>`;
 }
 
-function toggle(el){ el.style.display = el.style.display==="block"?"none":"block"; }
+/* ===== RIEPILOGO MESE ===== */
 
-function sommaPerNome(arr,map){ arr.forEach(v=> map[v.n]=(map[v.n]||0)+v.i ); }
+function bloccoTot(id,t,o){
+  let tot=0,h="";
+  Object.keys(o).forEach(k=>{
+    tot+=o[k];
+    h+=`<div>• ${k}: €${o[k]}</div>`;
+  });
+  return `
+  <div class="sep">
+    <div class="tot-header" onclick="toggle(document.getElementById('${id}'))">
+      ${t} €${tot}
+    </div>
+    <div class="tot-body" id="${id}">${h}</div>
+  </div>`;
+}
 
 function riepilogoMese(){
   let m=selMese.value;
   if(!db[m]) return;
 
-  let tot={food:{},nonfood:{},extra:{},acconti:{}};
   let inc=0,c=0,p=0,s=0;
+  let tot={food:{},nonfood:{},extra:{},acconti:{}};
 
   db[m].forEach(g=>{
-    inc += g.inc || 0;
-    c += g.contanti || 0;
-    p += g.pos || 0;
-    s += g.sardex || 0;
+    inc+=g.inc||0;
+    c+=g.contanti||0;
+    p+=g.pos||0;
+    s+=g.sardex||0;
 
-    sommaPerNome(g.food||[],tot.food);
-    sommaPerNome(g.nonfood||[],tot.nonfood);
-    sommaPerNome(g.extra||[],tot.extra);
-    sommaPerNome(g.acconti||[],tot.acconti);
+    sommaPerNome(g.food,tot.food);
+    sommaPerNome(g.nonfood,tot.nonfood);
+    sommaPerNome(g.extra,tot.extra);
+    sommaPerNome(g.acconti,tot.acconti);
   });
-
-  let sp=[
-    ...Object.values(tot.food),
-    ...Object.values(tot.nonfood),
-    ...Object.values(tot.extra)
-  ].reduce((a,b)=>a+b,0);
 
   boxRiepilogo.innerHTML=`
     <strong>Incassi Totali €${inc}</strong>
-    <div class="sep">
-      <strong>Dettaglio incassi €${c+p+s}</strong>
-      <div>• Contanti: €${c}</div>
-      <div>• POS: €${p}</div>
-      <div>• Sardex: €${s}</div>
-    </div>
-    <div class="sep"><strong>Food €${Object.values(tot.food).reduce((a,b)=>a+b,0)}</strong></div>
-    <div class="sep"><strong>Non Food €${Object.values(tot.nonfood).reduce((a,b)=>a+b,0)}</strong></div>
-    <div class="sep"><strong>Extra €${Object.values(tot.extra).reduce((a,b)=>a+b,0)}</strong></div>
-    <div class="sep"><strong>Acconti €${Object.values(tot.acconti).reduce((a,b)=>a+b,0)}</strong></div>
-    <div class="sep"><strong>Utile €${inc-sp}</strong></div>
+    ${bloccoTot("inc","Incassi",{Contanti:c,POS:p,Sardex:s})}
+    ${bloccoTot("f","Food",tot.food)}
+    ${bloccoTot("nf","Non Food",tot.nonfood)}
+    ${bloccoTot("e","Extra",tot.extra)}
+    ${bloccoTot("a","Acconti",tot.acconti)}
   `;
 }
+
+/* ===== STORICO GIORNI ===== */
 
 function mostraStorico(){
   let html="";
@@ -170,10 +129,13 @@ function mostraStorico(){
       days+=`
       <div class="day-card">
         <div class="day-header" onclick="toggle(document.getElementById('d${mi}_${i}'))">
-          ${formattaData(g.data)} <span>€${(g.inc||0)-sp}</span>
+          ${g.data} <span>€${(g.inc||0)-sp}</span>
         </div>
         <div class="day-body" id="d${mi}_${i}">
-          <div class="small">Contanti €${g.contanti||0} · POS €${g.pos||0} · Sardex €${g.sardex||0}</div>
+          ${blocco("Food",g.food)}
+          ${blocco("Non Food",g.nonfood)}
+          ${blocco("Extra",g.extra)}
+          ${blocco("Acconti",g.acconti)}
         </div>
       </div>`;
     });
@@ -183,14 +145,10 @@ function mostraStorico(){
       <div class="month-body" id="m${mi}">${days}</div>
     </div>`;
   });
+
   storico.innerHTML=html;
   selMese.innerHTML = Object.keys(db).sort().reverse().map(m=>`<option>${m}</option>`).join("");
   riepilogoMese();
-}
-
-function formattaData(d){
-  let x=new Date(d);
-  return `${String(x.getDate()).padStart(2,'0')}/${String(x.getMonth()+1).padStart(2,'0')}/${x.getFullYear()}`;
 }
 
 mostraStorico();
