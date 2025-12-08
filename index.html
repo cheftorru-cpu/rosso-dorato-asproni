@@ -1,61 +1,81 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Rosso Dorato Asproni</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body{background:#111;color:#eee;font-family:system-ui,Arial;padding:15px;min-height:100vh}
-h1{text-align:center}
-.card{background:#1c1c1c;border-radius:12px;padding:15px;margin-bottom:15px}
-input,button,select{width:100%;padding:10px;margin:6px 0;border:none;border-radius:8px;box-sizing:border-box}
+/* Stili semplici e leggibili per mobile */
+body{background:#111;color:#eee;font-family:system-ui,Arial;padding:12px;min-height:100vh;box-sizing:border-box}
+h1{ text-align:center; margin:8px 0 14px; font-size:1.3rem }
+.card{background:#1c1c1c;border-radius:12px;padding:14px;margin-bottom:12px;box-sizing:border-box}
+input,select,button,textarea{width:100%;padding:10px;margin:6px 0;border:none;border-radius:8px;font-size:15px;box-sizing:border-box}
 button{background:#b11218;color:#fff;font-weight:600}
 button.secondary{background:#333}
-.month-card,.day-card{border:1px solid #333;border-radius:10px;margin-bottom:10px;overflow:hidden}
-.month-header,.day-header{padding:10px;background:#222;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
-.month-body,.day-body{display:none;padding:10px}
-.small{color:#bbb;font-size:14px}
-.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);justify-content:center;align-items:center}
-.modal-box{background:#1c1c1c;border-radius:12px;padding:15px;width:90%;max-width:420px}
-.list-item{display:flex;justify-content:space-between;font-size:14px;margin-top:4px}
-.sep{margin-top:8px;border-top:1px dashed #444;padding-top:6px}
-.tot-header{cursor:pointer;font-weight:600;background:#1a1a1a;padding:8px;border-radius:6px}
-.tot-body{display:none;padding:8px}
+.month-card,.day-card,.fattura-card{border:1px solid #333;border-radius:10px;margin-bottom:10px;overflow:hidden}
+.month-header,.day-header,.fattura-header{padding:12px;background:#222;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.month-body,.day-body,.fattura-body,.tot-body{display:none;padding:10px}
+.small{color:#bbb;font-size:13px}
+.sep{margin-top:10px;border-top:1px dashed #444;padding-top:8px}
 .row{display:flex;justify-content:space-between;align-items:center}
-.action span{cursor:pointer;margin-left:8px}
-.small-btn{background:#333;color:#fff;padding:8px;border-radius:8px;border:none;width:100%;margin-top:6px}
+.action{display:flex;gap:8px}
+.action span{cursor:pointer}
 .info{color:#bbb;font-size:13px}
+.tot-header{cursor:pointer;font-weight:600;background:#161616;padding:8px;border-radius:6px;margin-bottom:8px}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);justify-content:center;align-items:center;padding:12px;box-sizing:border-box}
+.modal-box{background:#1c1c1c;border-radius:12px;padding:14px;width:100%;max-width:480px;max-height:85vh;overflow:auto}
+.small-btn{background:#333;color:#fff;padding:8px;border-radius:8px;border:none;width:100%;margin-top:8px}
+.debito{background:#ff6b35;color:#fff;padding:4px 8px;border-radius:4px;font-size:12px}
+@media(max-width:420px){ h1{font-size:1.1rem} input,button,select{font-size:14px} }
 </style>
 </head>
 <body>
 <h1>🍷 Rosso Dorato Asproni</h1>
 
+<!-- NUOVA GIORNATA -->
 <div class="card">
   <h2>Nuova giornata</h2>
   <input type="date" id="data">
-  <input type="number" id="incC" placeholder="Incassi contanti">
+  <input type="number" id="incC" placeholder="Incassi contanti (es. 120.50)">
   <input type="number" id="incP" placeholder="Incassi POS">
   <input type="number" id="incS" placeholder="Incassi Sardex">
-  <button onclick="openModal('food')">➕ Food</button>
-  <button onclick="openModal('nonfood')">➕ Non Food</button>
-  <button onclick="openModal('extra')">➕ Extra</button>
-  <button onclick="openModal('acconti')">➕ Acconti</button>
-  <button onclick="salva()">💾 Salva giornata</button>
-  <div class="info">Dopo il salvataggio puoi modificare gli incassi con il bottone "Modifica incassi" nel riepilogo mese o eliminare l'intera giornata dallo storico.</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button onclick="openModal('food')" style="flex:1">➕ Food</button>
+    <button onclick="openModal('nonfood')" style="flex:1">➕ Non Food</button>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button onclick="openModal('extra')" style="flex:1">➕ Extra</button>
+    <button onclick="openModal('acconti')" style="flex:1">➕ Acconti</button>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+    <button onclick="openModal('fatture')" style="flex:1;background:#444">📄 Aggiungi pagamento fattura</button>
+    <button onclick="salva()" style="flex:1">💾 Salva giornata</button>
+  </div>
+  <div class="info">Dopo il salvataggio puoi modificare gli incassi (bottone "Modifica incassi") o eliminare la giornata dallo storico.</div>
 </div>
 
+<!-- FATTURE APERTE -->
+<div class="card">
+  <h2>Fatture aperte</h2>
+  <button class="secondary" onclick="nuovaFattura()">➕ Nuova fattura</button>
+  <div id="fattureAperte" style="margin-top:8px"></div>
+</div>
+
+<!-- RIEPILOGO MESE -->
 <div class="card">
   <h2>Riepilogo mese</h2>
   <select id="selMese" onchange="riepilogoMese()"></select>
-  <div id="boxRiepilogo" class="small"></div>
+  <button class="secondary" onclick="toggleAllDays()" style="margin-top:8px">📊 Mostra / Nascondi tutti i giorni</button>
+  <div id="boxRiepilogo" class="small" style="margin-top:8px"></div>
 </div>
 
+<!-- STORICO -->
 <div class="card">
   <h2>Storico giornate</h2>
   <div id="storico"></div>
 </div>
 
-<!-- MODALE per aggiungere/modificare voci -->
+<!-- MODALE GENERICO -->
 <div class="modal" id="modal">
   <div class="modal-box">
     <h3 id="modTit"></h3>
@@ -70,57 +90,90 @@ button.secondary{background:#333}
 </div>
 
 <script>
-/* ===== dati iniziali ===== */
-let db = JSON.parse(localStorage.getItem("rd")) || {};
-let buffer = {food:[],nonfood:[],extra:[],acconti:[]};
-let tipo=""; let edit=null; // edit = {m,gi,tipo,i}
-
-/* ===== helper UI ===== */
-function openModal(t){
-  tipo=t; edit=null;
-  btnSave.innerText="Aggiungi";
-  modTit.innerText = "Aggiungi " + t;
-  modal.style.display = "flex";
-  render();
+/* ===== Inizializzazione dati ===== */
+let db = {};
+let fatture = {};
+try {
+  db = JSON.parse(localStorage.getItem('rd')) || {};
+  fatture = JSON.parse(localStorage.getItem('fatture')) || {};
+} catch(e){
+  db = {}; fatture = {};
 }
-function closeModal(){ modal.style.display="none"; }
-function render(){
-  lista.innerHTML = "";
+let buffer = { food:[], nonfood:[], extra:[], acconti:[], fatture:[] };
+let tipo = '';
+let edit = null; // {m,gi,tipo,i}
+
+/* ===== UI helpers ===== */
+function openModal(t){
+  tipo = t;
+  edit = null;
+  btnSave.innerText = 'Aggiungi';
+  modTit.innerText = 'Aggiungi ' + t;
+  modal.style.display = 'flex';
+  renderModalList();
+  if(t === 'fatture'){
+    mNome.placeholder = 'ID fattura (scegli da Fatture aperte)';
+    mImporto.placeholder = 'Importo (acconto da registrare oggi)';
+  } else {
+    mNome.placeholder = 'Nome / Fornitore / Persona';
+    mImporto.placeholder = 'Importo';
+  }
+}
+function closeModal(){ modal.style.display = 'none'; }
+function renderModalList(){
+  lista.innerHTML = '';
   (buffer[tipo]||[]).forEach((v,i)=>{
-    lista.innerHTML += `<div class="list-item"><div>€${v.i.toFixed(2)} - ${v.n}</div><div style="cursor:pointer" onclick="buffer['${tipo}'].splice(${i},1);render()">❌</div></div>`;
+    lista.innerHTML += `<div class="list-item"><div>€${v.i.toFixed(2)} - ${v.n}</div><div style="cursor:pointer" onclick="buffer['${tipo}'].splice(${i},1);renderModalList()">❌</div></div>`;
   });
 }
 
-/* ===== aggiunta / modifica voce nel buffer (prima di salvare la giornata) ===== */
+/* salva voce in buffer (prima di salvare giornata) o modifica esistente */
 function salvaVoce(){
-  if(+mImporto.value <= 0) return alert("Importo non valido");
+  const imp = parseFloat(mImporto.value);
+  const nome = (mNome.value || 'Senza nome').trim();
+  if(!(imp>0)) return alert('Inserisci importo valido');
   if(edit){
-    // modifica voce già salvata in db
+    // modifica voce già salvata nel db
     const v = db[edit.m][edit.gi][edit.tipo][edit.i];
-    v.i = +mImporto.value;
-    v.n = mNome.value || "Senza nome";
-    localStorage.setItem("rd", JSON.stringify(db));
+    v.i = imp; v.n = nome;
+    localStorage.setItem('rd', JSON.stringify(db));
     edit = null;
     mostraStorico();
     closeModal();
     return;
   }
-  buffer[tipo].push({i:+mImporto.value, n: mNome.value || "Senza nome"});
-  mImporto.value = ""; mNome.value = "";
-  render();
+  buffer[tipo].push({ i: imp, n: nome });
+  mImporto.value = ''; mNome.value = '';
+  renderModalList();
 }
 
-/* ===== salva giornata ===== */
+/* ===== SALVA GIORNATA ===== */
 function salva(){
-  if(!data.value) return alert("Inserisci la data");
-  let m = data.value.slice(0,7);
-  if(!db[m]) db[m] = [];
+  if(!data.value) return alert('Inserisci la data');
+  const monthKey = data.value.slice(0,7);
+  if(!db[monthKey]) db[monthKey] = [];
 
-  let c = +incC.value || 0;
-  let p = +incP.value || 0;
-  let s = +incS.value || 0;
+  const c = parseFloat(incC.value) || 0;
+  const p = parseFloat(incP.value) || 0;
+  const s = parseFloat(incS.value) || 0;
 
-  db[m].push({
+  // Paga fatture buffer: se buffer.fatture contiene {id, i}, registriamo pagamenti come "extra" e aggiorniamo fatture
+  const fatturePagate = [];
+  const extraFromFatture = [];
+  (buffer.fatture || []).forEach(fb => {
+    if(fb.id && fatture[fb.id]){
+      const f = fatture[fb.id];
+      const daPagare = Math.min(f.tot - f.pagato, fb.i);
+      if(daPagare > 0){
+        extraFromFatture.push({ i: daPagare, n: `Pagamento fattura ${f.id} - ${f.fornitore}` });
+        f.pagato = (f.pagato || 0) + daPagare;
+        fatturePagate.push({ id: f.id, i: daPagare, n: `Pagamento fattura ${f.id} - ${f.fornitore}` });
+        if(f.pagato >= f.tot) delete fatture[f.id];
+      }
+    }
+  });
+
+  const giornata = {
     data: data.value,
     contanti: c,
     pos: p,
@@ -128,25 +181,116 @@ function salva(){
     inc: c + p + s,
     food: [...buffer.food],
     nonfood: [...buffer.nonfood],
-    extra: [...buffer.extra],
-    acconti: [...buffer.acconti]
-  });
+    extra: [...buffer.extra, ...extraFromFatture],
+    acconti: [...buffer.acconti],
+    fatturePagate: fatturePagate
+  };
 
-  localStorage.setItem("rd", JSON.stringify(db));
-  buffer = {food:[],nonfood:[],extra:[],acconti:[]};
-  data.value=""; incC.value=""; incP.value=""; incS.value="";
-  mostraStorico();
-  alert("Giornata salvata ✅");
+  db[monthKey].push(giornata);
+  localStorage.setItem('rd', JSON.stringify(db));
+  localStorage.setItem('fatture', JSON.stringify(fatture));
+
+  // reset
+  buffer = { food:[], nonfood:[], extra:[], acconti:[], fatture:[] };
+  data.value = ''; incC.value=''; incP.value=''; incS.value='';
+  mostraFatture(); mostraStorico(); alert('Giornata salvata ✅');
 }
 
-/* ===== modifica incassi giornata (prompt semplice) ===== */
+/* ===== FATTURE: aggiungi e paga ===== */
+function nuovaFattura(){
+  const tot = prompt('Importo totale fattura (es. 345.50):');
+  if(tot === null) return;
+  if(isNaN(parseFloat(tot)) || parseFloat(tot) <= 0) return alert('Importo non valido');
+  const forn = prompt('Nome fornitore:');
+  if(!forn) return alert('Fornitore obbligatorio');
+  const id = 'F' + Date.now();
+  fatture[id] = { id, tot: parseFloat(tot), fornitore: forn, pagato: 0 };
+  localStorage.setItem('fatture', JSON.stringify(fatture));
+  mostraFatture();
+}
+
+function mostraFatture(){
+  const box = document.getElementById('fattureAperte');
+  let html = '';
+  const values = Object.values(fatture).sort((a,b)=>b.tot - a.tot);
+  if(values.length === 0){ box.innerHTML = '<div class="small">Nessuna fattura aperta ✓</div>'; return; }
+  values.forEach(f=>{
+    const resto = (f.tot - (f.pagato||0));
+    html += `<div class="fattura-card">
+      <div class="fattura-header"><div>${f.fornitore} — ${f.id}</div><div>Resto €${resto.toFixed(2)} <span class="debito">Da pagare</span></div></div>
+      <div class="fattura-body">
+        <div class="small">Totale: €${f.tot.toFixed(2)} • Pagato: €${(f.pagato||0).toFixed(2)}</div>
+        <input type="number" id="p_${f.id}" placeholder="Acconto da registrare oggi">
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button onclick="pagaFatturaPrompt('${f.id}')" class="small-btn">💰 Registra pagamento</button>
+          <button onclick="eliminaFattura('${f.id}')" class="small-btn" style="background:#8b0000">🗑 Elimina fattura</button>
+        </div>
+      </div>
+    </div>`;
+  });
+  box.innerHTML = html;
+}
+
+function pagaFatturaPrompt(id){
+  const input = document.getElementById('p_' + id);
+  const val = parseFloat(input.value || 0);
+  if(!(val > 0)) return alert('Inserisci un importo valido');
+  // chiedi a quale data associare la spesa (default: oggi)
+  const date = prompt('Data pagamento (aaaa-mm-gg) in cui registrare la spesa (lascia vuoto = oggi):', new Date().toISOString().slice(0,10));
+  if(date === null) return;
+  pagaFattura(id, val, date);
+  input.value = '';
+}
+
+function pagaFattura(id, importo, dataPago){
+  if(!fatture[id]) return alert('Fattura non trovata');
+  const f = fatture[id];
+  const resto = f.tot - (f.pagato||0);
+  const daPagare = Math.min(resto, parseFloat(importo) || 0);
+  if(daPagare <= 0) return alert('Importo non valido o già saldata');
+  f.pagato = (f.pagato||0) + daPagare;
+  if(f.pagato >= f.tot) delete fatture[id];
+  localStorage.setItem('fatture', JSON.stringify(fatture));
+
+  // aggiungi spesa al giorno scelto: se mese non esiste crealo
+  const mk = (dataPago||new Date().toISOString().slice(0,10)).slice(0,7);
+  if(!db[mk]) db[mk] = [];
+  // se esiste già giornata con quella data, usiamo prima giornata trovata con data uguale, altrimenti creiamone una
+  let gi = db[mk].findIndex(g => g.data === (dataPago||new Date().toISOString().slice(0,10)));
+  if(gi === -1){
+    // crea nuova giornata vuota con inc 0
+    db[mk].push({
+      data: (dataPago||new Date().toISOString().slice(0,10)),
+      contanti:0,pos:0,sardex:0,inc:0,
+      food:[], nonfood:[], extra:[], acconti:[], fatturePagate:[]
+    });
+    gi = db[mk].length - 1;
+  }
+  // registra la spesa come extra e come fattura pagata nel giorno
+  db[mk][gi].extra.push({ i: daPagare, n: `Pagamento fattura ${id} - ${f.fornitore}` });
+  db[mk][gi].fatturePagate = db[mk][gi].fatturePagate || [];
+  db[mk][gi].fatturePagate.push({ id, i: daPagare, n: `Pagamento fattura ${id} - ${f.fornitore}` });
+
+  localStorage.setItem('rd', JSON.stringify(db));
+  mostraFatture(); mostraStorico(); riepilogoMese();
+  alert(`Registrato pagamento €${daPagare.toFixed(2)} su ${db[mk][gi].data}`);
+}
+
+function eliminaFattura(id){
+  if(!confirm('Eliminare fattura?')) return;
+  delete fatture[id];
+  localStorage.setItem('fatture', JSON.stringify(fatture));
+  mostraFatture();
+}
+
+/* ===== modifica incassi giornata ===== */
 function modificaIncassi(m,gi){
   const g = db[m][gi];
-  let nc = prompt("Contanti (attuale: €" + (g.contanti||0).toFixed(2) + ")", (g.contanti||0));
-  if(nc === null) return; // annulla
-  let np = prompt("POS (attuale: €" + (g.pos||0).toFixed(2) + ")", (g.pos||0));
+  const nc = prompt('Contanti (attuale: €' + (g.contanti||0).toFixed(2) + ')', (g.contanti||0));
+  if(nc === null) return;
+  const np = prompt('POS (attuale: €' + (g.pos||0).toFixed(2) + ')', (g.pos||0));
   if(np === null) return;
-  let ns = prompt("Sardex (attuale: €" + (g.sardex||0).toFixed(2) + ")", (g.sardex||0));
+  const ns = prompt('Sardex (attuale: €' + (g.sardex||0).toFixed(2) + ')', (g.sardex||0));
   if(ns === null) return;
 
   g.contanti = parseFloat(nc) || 0;
@@ -154,66 +298,66 @@ function modificaIncassi(m,gi){
   g.sardex = parseFloat(ns) || 0;
   g.inc = g.contanti + g.pos + g.sardex;
 
-  localStorage.setItem("rd", JSON.stringify(db));
-  mostraStorico();
-  riepilogoMese();
-  alert("Incassi aggiornati ✅");
+  localStorage.setItem('rd', JSON.stringify(db));
+  mostraStorico(); riepilogoMese();
+  alert('Incassi aggiornati ✅');
 }
 
-/* ===== elimina intera giornata ===== */
+/* ===== elimina giorno ===== */
 function eliminaGiornata(m,gi){
-  if(!confirm("Eliminare l'intera giornata?")) return;
+  if(!confirm('Eliminare l\'intera giornata?')) return;
   db[m].splice(gi,1);
-  if(db[m].length===0) delete db[m];
-  localStorage.setItem("rd", JSON.stringify(db));
-  mostraStorico();
-  riepilogoMese();
+  if(db[m].length === 0) delete db[m];
+  localStorage.setItem('rd', JSON.stringify(db));
+  mostraStorico(); riepilogoMese();
 }
 
-/* ===== funzioni di visualizzazione e calcolo ===== */
-function toggle(el){ el.style.display = el.style.display==="block" ? "none" : "block"; }
-
-function sommaPerNome(arr,map){
-  (arr||[]).forEach(v => map[v.n] = (map[v.n]||0) + v.i );
+/* ===== funzioni di visualizzazione / calcolo ===== */
+function toggle(el){
+  if(!el) return;
+  el.style.display = (el.style.display === 'block') ? 'none' : 'block';
 }
-
-function blocco(t,arr,m,gi,tipo){
+function toggleAllDays(){
+  document.querySelectorAll('.day-body').forEach(b => {
+    b.style.display = (b.style.display === 'block') ? 'none' : 'block';
+  });
+}
+function sommaPerNome(arr, map){
+  (arr||[]).forEach(v => map[v.n] = (map[v.n]||0) + v.i);
+}
+function blocco(t, arr, m, gi, tipo){
   if(!arr || !arr.length) return `<div class="sep"><strong>${t} €0.00</strong></div>`;
   let s = 0;
-  let html = arr.map((v,i)=>{
+  const html = arr.map((v,i) => {
     s += v.i;
-    // singola voce con modifica/elimina
-    return `<div class="row"><div>€${v.i.toFixed(2)} - ${v.n}</div><div class="action"><span onclick="modificaVoce('${m}',${gi},'${tipo}',${i})">✏️</span><span onclick="eliminaVoce('${m}',${gi},'${tipo}',${i})">🗑</span></div></div>`;
-  }).join("");
+    return `<div class="row"><div>€${v.i.toFixed(2)} - ${v.n}</div><div class="action"><span title="Modifica" onclick="modificaVoce('${m}',${gi},'${tipo}',${i})">✏️</span><span title="Elimina" onclick="eliminaVoce('${m}',${gi},'${tipo}',${i})">🗑</span></div></div>`;
+  }).join('');
   return `<div class="sep"><strong>${t} €${s.toFixed(2)}</strong>${html}</div>`;
 }
-
 function modificaVoce(m,gi,tipo,i){
   edit = {m,gi,tipo,i};
   const v = db[m][gi][tipo][i];
   mImporto.value = v.i;
   mNome.value = v.n;
-  btnSave.innerText = "Salva modifica";
-  modTit.innerText = "Modifica " + tipo;
-  modal.style.display = "flex";
+  btnSave.innerText = 'Salva modifica';
+  modTit.innerText = 'Modifica ' + tipo;
+  modal.style.display = 'flex';
 }
-
 function eliminaVoce(m,gi,tipo,i){
-  if(!confirm("Eliminare voce?")) return;
+  if(!confirm('Eliminare voce?')) return;
   db[m][gi][tipo].splice(i,1);
-  localStorage.setItem("rd", JSON.stringify(db));
-  mostraStorico();
-  riepilogoMese();
+  localStorage.setItem('rd', JSON.stringify(db));
+  mostraStorico(); riepilogoMese();
 }
 
-/* riepilogo mese con breakdown incassi contanti/POS/Sardex e lista giorni con dettaglio */
+/* RIEPILOGO MESE: totali e breakdown per fornitore */
 function riepilogoMese(){
-  const sel = document.getElementById("selMese");
+  const sel = document.getElementById('selMese');
   const m = sel.value;
-  if(!m || !db[m]) { boxRiepilogo.innerHTML = "<div class='info'>Seleziona un mese con dati.</div>"; return; }
+  if(!m || !db[m]) { boxRiepilogo.innerHTML = '<div class="info">Seleziona un mese con dati.</div>'; return; }
 
-  let tot = {inc:0, contanti:0, pos:0, sardex:0, food:{}, nonfood:{}, extra:{}, acconti:{}};
-  db[m].forEach(g=>{
+  let tot = { inc:0, contanti:0, pos:0, sardex:0, food:{}, nonfood:{}, extra:{}, acconti:{} };
+  db[m].forEach(g => {
     tot.inc += g.inc || 0;
     tot.contanti += g.contanti || 0;
     tot.pos += g.pos || 0;
@@ -224,67 +368,72 @@ function riepilogoMese(){
     sommaPerNome(g.acconti, tot.acconti);
   });
 
-  function bloccoTot(tid, title, obj){
-    let totVal = Object.values(obj).reduce((a,b)=>a+b,0);
-    let htmlLines = Object.keys(obj).map(k=>`<div>• ${k}: €${obj[k].toFixed(2)}</div>`).join("");
-    return `<div class="sep"><div class="tot-header" onclick="toggle(document.getElementById('${tid}'))">${title} €${totVal.toFixed(2)}</div><div class="tot-body" id="${tid}">${htmlLines || '<div>—</div>'}</div></div>`;
+  function bloccoTot(id, title, obj){
+    const total = Object.values(obj).reduce((a,b)=>a+b,0);
+    const lines = Object.keys(obj).map(k=>`<div>• ${k}: €${obj[k].toFixed(2)}</div>`).join('') || '<div>—</div>';
+    return `<div class="sep"><div class="tot-header" onclick="toggle(document.getElementById('${id}'))">${title} €${total.toFixed(2)}</div><div class="tot-body" id="${id}">${lines}</div></div>`;
   }
 
   boxRiepilogo.innerHTML = `
     <div class="tot-header">📊 Totali mese: Incassi €${tot.inc.toFixed(2)} | Contanti €${tot.contanti.toFixed(2)} | POS €${tot.pos.toFixed(2)} | Sardex €${tot.sardex.toFixed(2)}</div>
-    ${bloccoTot("bt_food","Food",tot.food)}
-    ${bloccoTot("bt_nonfood","Non Food",tot.nonfood)}
-    ${bloccoTot("bt_extra","Extra",tot.extra)}
-    ${bloccoTot("bt_acconti","Acconti",tot.acconti)}
+    ${bloccoTot('btf','Food', tot.food)}
+    ${bloccoTot('btnf','Non Food', tot.nonfood)}
+    ${bloccoTot('bte','Extra', tot.extra)}
+    ${bloccoTot('bta','Acconti', tot.acconti)}
   `;
 }
 
-/* storico giorno per giorno con pulsanti modifica incassi ed elimina giornata */
+/* STORICO: mesi -> giorni (tutti a tendina). Ogni giorno mostra incassi dettagliati e liste con modifica/cancella */
 function mostraStorico(){
-  let html = "";
-  selMese.innerHTML = "";
-  Object.keys(db).sort().reverse().forEach(m=>{
-    selMese.options.add(new Option(m,m));
-    let daysHtml = "";
-    db[m].forEach((g,gi)=>{
-      let sp = [...(g.food||[]), ...(g.nonfood||[]), ...(g.extra||[])].reduce((t,x)=>t+x.i,0);
-      let net = (g.inc||0) - sp;
+  let html = '';
+  const sel = document.getElementById('selMese');
+  sel.innerHTML = '';
+  const months = Object.keys(db).sort().reverse();
+  months.forEach(m => {
+    sel.options.add(new Option(m,m));
+    let daysHtml = '';
+    db[m].forEach((g, gi) => {
+      const sp = [...(g.food||[]), ...(g.nonfood||[]), ...(g.extra||[])].reduce((t,x)=>t + (x.i||0), 0);
+      const net = (g.inc||0) - sp;
       daysHtml += `
       <div class="day-card">
         <div class="day-header">
-          <div style="flex:1;cursor:pointer" onclick="toggle(document.getElementById('${m}_${gi}'))">${formattaData(g.data)}</div>
-          <div style="text-align:right;">
+          <div style="flex:1;cursor:pointer" onclick="toggle(document.getElementById('d_${m}_${gi}'))">${formattaData(g.data)}</div>
+          <div style="text-align:right">
             <div class="info">Netto €${net.toFixed(2)}</div>
-            <div style="font-size:13px;margin-top:6px">
+            <div style="margin-top:8px;display:flex;gap:8px;justify-content:flex-end">
               <button class="small-btn" onclick="event.stopPropagation(); modificaIncassi('${m}',${gi})">Modifica incassi</button>
               <button class="small-btn" style="background:#8b0000" onclick="event.stopPropagation(); eliminaGiornata('${m}',${gi})">Elimina giornata</button>
             </div>
           </div>
         </div>
-        <div class="day-body" id="${m}_${gi}">
+        <div class="day-body" id="d_${m}_${gi}">
           <div class="info">Incassi: Contanti €${(g.contanti||0).toFixed(2)} • POS €${(g.pos||0).toFixed(2)} • Sardex €${(g.sardex||0).toFixed(2)}</div>
-          ${blocco("Food", g.food, m, gi, "food")}
-          ${blocco("Non Food", g.nonfood, m, gi, "nonfood")}
-          ${blocco("Extra", g.extra, m, gi, "extra")}
-          ${blocco("Acconti", g.acconti, m, gi, "acconti")}
+          ${blocco('Food', g.food, m, gi, 'food')}
+          ${blocco('Non Food', g.nonfood, m, gi, 'nonfood')}
+          ${blocco('Extra', g.extra, m, gi, 'extra')}
+          ${blocco('Acconti', g.acconti, m, gi, 'acconti')}
+          ${blocco('Fatture Pagate', g.fatturePagate || [], m, gi, 'fatturePagate')}
         </div>
       </div>`;
     });
     html += `<div class="month-card"><div class="month-header" onclick="toggle(this.nextElementSibling)">${m}</div><div class="month-body">${daysHtml}</div></div>`;
   });
-  storico.innerHTML = html;
-  if(selMese.options.length) selMese.selectedIndex = 0;
+  document.getElementById('storico').innerHTML = html;
+  if(sel.options.length) sel.selectedIndex = 0;
   riepilogoMese();
 }
 
-/* utile */
+/* formattazione data */
 function formattaData(d){
   const x = new Date(d);
   return `${String(x.getDate()).padStart(2,'0')}/${String(x.getMonth()+1).padStart(2,'0')}/${x.getFullYear()}`;
 }
 
-/* inizializza UI */
+/* inizializzazione UI */
+mostraFatture();
 mostraStorico();
+
 </script>
 </body>
 </html>
