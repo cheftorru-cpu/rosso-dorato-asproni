@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <title>Rosso Dorato Asproni</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <style>
 body{background:#111;color:#eee;font-family:system-ui,Arial;padding:15px}
 h1{text-align:center}
@@ -52,7 +53,6 @@ button.secondary{background:#333}
 <div id="storico"></div>
 </div>
 
-<!-- MODALE -->
 <div class="modal" id="modal">
   <div class="modal-box">
     <h3 id="modTit"></h3>
@@ -69,12 +69,7 @@ let db = JSON.parse(localStorage.getItem("rd")) || {};
 let buffer = {food:[],nonfood:[],extra:[],acconti:[]};
 let tipo="";
 
-function openModal(t){
-  tipo=t;
-  modTit.innerText="Aggiungi "+t;
-  modal.style.display="flex";
-  render();
-}
+function openModal(t){ tipo=t; modTit.innerText="Aggiungi "+t; modal.style.display="flex"; render(); }
 function closeModal(){ modal.style.display="none"; }
 
 function addVoce(){
@@ -83,27 +78,25 @@ function addVoce(){
   mImporto.value=""; mNome.value="";
   render();
 }
-
 function render(){
   lista.innerHTML="";
   buffer[tipo].forEach((v,i)=>{
     lista.innerHTML+=`
-      <div class="list-item">
-        <span>€${v.i} - ${v.n}</span>
-        <span onclick="buffer[tipo].splice(${i},1);render()">❌</span>
-      </div>`;
+    <div class="list-item">
+      <span>€${v.i} - ${v.n}</span>
+      <span onclick="buffer[tipo].splice(${i},1);render()">❌</span>
+    </div>`;
   });
 }
 
 function salva(){
   if(!data.value) return alert("Inserisci la data");
+  let m=data.value.slice(0,7);
+  if(!db[m]) db[m]=[];
 
   let c=+incC.value||0;
   let p=+incP.value||0;
   let s=+incS.value||0;
-
-  let m=data.value.slice(0,7);
-  if(!db[m]) db[m]=[];
 
   db[m].push({
     data:data.value,
@@ -123,16 +116,24 @@ function salva(){
 }
 
 function toggle(el){ el.style.display = el.style.display==="block"?"none":"block"; }
-function sommaPerNome(arr,map){ arr.forEach(v=>map[v.n]=(map[v.n]||0)+v.i); }
+
+function sommaPerNome(arr,map){
+  arr.forEach(v=> map[v.n]=(map[v.n]||0)+v.i );
+}
 
 function bloccoTot(id,t,o){
   let s=0,h="";
-  Object.keys(o).forEach(k=>{s+=o[k];h+=`<div>• ${k}: €${o[k]}</div>`});
+  Object.keys(o).forEach(k=>{
+    s+=o[k];
+    h+=`<div>• ${k}: €${o[k]}</div>`;
+  });
   return `
-    <div class="sep">
-      <div class="tot-header" onclick="toggle(document.getElementById('${id}'))">${t} €${s}</div>
-      <div class="tot-body" id="${id}">${h}</div>
-    </div>`;
+  <div class="sep">
+    <div class="tot-header" onclick="toggle(document.getElementById('${id}'))">
+      ${t} €${s}
+    </div>
+    <div class="tot-body" id="${id}">${h}</div>
+  </div>`;
 }
 
 function riepilogoMese(){
@@ -143,18 +144,22 @@ function riepilogoMese(){
   let inc=0,c=0,p=0,s=0;
 
   db[m].forEach(g=>{
-    inc+=g.inc;
-    c+=g.contanti;
-    p+=g.pos;
-    s+=g.sardex;
-    sommaPerNome(g.food,tot.food);
-    sommaPerNome(g.nonfood,tot.nonfood);
-    sommaPerNome(g.extra,tot.extra);
-    sommaPerNome(g.acconti,tot.acconti);
+    inc += g.inc || 0;
+    c += g.contanti || 0;
+    p += g.pos || 0;
+    s += g.sardex || 0;
+
+    sommaPerNome(g.food||[],tot.food);
+    sommaPerNome(g.nonfood||[],tot.nonfood);
+    sommaPerNome(g.extra||[],tot.extra);
+    sommaPerNome(g.acconti||[],tot.acconti);
   });
 
-  let sp=[...Object.values(tot.food),...Object.values(tot.nonfood),...Object.values(tot.extra)]
-    .reduce((a,b)=>a+b,0);
+  let sp=[
+    ...Object.values(tot.food),
+    ...Object.values(tot.nonfood),
+    ...Object.values(tot.extra)
+  ].reduce((a,b)=>a+b,0);
 
   boxRiepilogo.innerHTML=`
     <strong>Incassi Totali €${inc}</strong>
@@ -172,28 +177,29 @@ function mostraStorico(){
   Object.keys(db).sort().reverse().forEach((m,mi)=>{
     let days="";
     db[m].forEach((g,i)=>{
-      let sp=[...g.food,...g.nonfood,...g.extra].reduce((t,x)=>t+x.i,0);
+      let sp=[...(g.food||[]),...(g.nonfood||[]),...(g.extra||[])].reduce((t,x)=>t+x.i,0);
       days+=`
-        <div class="day-card">
-          <div class="day-header" onclick="toggle(d${mi}_${i})">
-            ${formattaData(g.data)} <span>€${g.inc-sp}</span>
-          </div>
-          <div class="day-body" id="d${mi}_${i}">
-            ${blocco("Food",g.food)}
-            ${blocco("Non Food",g.nonfood)}
-            ${blocco("Extra",g.extra)}
-            ${blocco("Acconti",g.acconti)}
-          </div>
-        </div>`;
+      <div class="day-card">
+        <div class="day-header" onclick="toggle(document.getElementById('d${mi}_${i}'))">
+          ${formattaData(g.data)} <span>€${g.inc-sp}</span>
+        </div>
+        <div class="day-body" id="d${mi}_${i}">
+          <div class="small">Contanti €${g.contanti||0} · POS €${g.pos||0} · Sardex €${g.sardex||0}</div>
+          ${blocco("Food",g.food||[])}
+          ${blocco("Non Food",g.nonfood||[])}
+          ${blocco("Extra",g.extra||[])}
+          ${blocco("Acconti",g.acconti||[])}
+        </div>
+      </div>`;
     });
     html+=`
-      <div class="month-card">
-        <div class="month-header" onclick="toggle(m${mi})">${m}</div>
-        <div class="month-body" id="m${mi}">${days}</div>
-      </div>`;
+    <div class="month-card">
+      <div class="month-header" onclick="toggle(document.getElementById('m${mi}'))">${m}</div>
+      <div class="month-body" id="m${mi}">${days}</div>
+    </div>`;
   });
   storico.innerHTML=html;
-  selMese.innerHTML=Object.keys(db).sort().reverse().map(m=>`<option>${m}</option>`).join("");
+  selMese.innerHTML = Object.keys(db).sort().reverse().map(m=>`<option>${m}</option>`).join("");
   riepilogoMese();
 }
 
