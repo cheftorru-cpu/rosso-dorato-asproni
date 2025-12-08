@@ -72,6 +72,22 @@ function blocco(t,a){
   return `<div class="sep"><strong>${t} €${s}</strong>${h}</div>`;
 }
 
+/* ===== INCASSI GIORNO (NUOVO, SOLO QUESTO) ===== */
+function bloccoIncassiGiorno(g){
+  let tot = (g.contanti||0)+(g.pos||0)+(g.sardex||0);
+  return `
+  <div class="sep">
+    <div class="tot-header" onclick="toggle(this.nextElementSibling)">
+      Incassi €${tot}
+    </div>
+    <div class="tot-body">
+      <div>• Contanti: €${g.contanti||0}</div>
+      <div>• POS: €${g.pos||0}</div>
+      <div>• Sardex: €${g.sardex||0}</div>
+    </div>
+  </div>`;
+}
+
 /* ===== RIEPILOGO MESE ===== */
 
 function bloccoTot(id,t,o){
@@ -132,6 +148,7 @@ function mostraStorico(){
           ${g.data} <span>€${(g.inc||0)-sp}</span>
         </div>
         <div class="day-body" id="d${mi}_${i}">
+          ${bloccoIncassiGiorno(g)}
           ${blocco("Food",g.food)}
           ${blocco("Non Food",g.nonfood)}
           ${blocco("Extra",g.extra)}
