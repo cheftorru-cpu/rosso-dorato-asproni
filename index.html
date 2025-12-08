@@ -21,7 +21,7 @@ button.secondary{background:#333}
 .list-item{display:flex;justify-content:space-between;font-size:14px;margin-top:4px}
 .sep{margin-top:8px;border-top:1px dashed #444;padding-top:6px}
 .tot-header{cursor:pointer;font-weight:600}
-.tot-body{display:block;padding-left:10px}
+.tot-body{display:none;padding-left:10px}
 </style>
 </head>
 
@@ -53,99 +53,144 @@ button.secondary{background:#333}
 <div id="storico"></div>
 </div>
 
+<!-- MODALE -->
 <div class="modal" id="modal">
-<div class="modal-box">
-<h3 id="modTit"></h3>
-<input type="number" id="mImporto" placeholder="Importo">
-<input type="text" id="mNome" placeholder="Nome">
-<button onclick="addVoce()">Aggiungi</button>
-<div id="lista"></div>
-<button class="secondary" onclick="closeModal()">Chiudi</button>
-</div>
+  <div class="modal-box">
+    <h3 id="modTit"></h3>
+    <input type="number" id="mImporto" placeholder="Importo">
+    <input type="text" id="mNome" placeholder="Nome / Fornitore / Persona">
+    <button onclick="addVoce()">Aggiungi</button>
+    <div id="lista"></div>
+    <button class="secondary" onclick="closeModal()">Chiudi</button>
+  </div>
 </div>
 
 <script>
 let db = JSON.parse(localStorage.getItem("rd")) || {};
-let buffer={food:[],nonfood:[],extra:[],acconti:[]};
+let buffer = {food:[],nonfood:[],extra:[],acconti:[]};
 let tipo="";
 
-function openModal(t){tipo=t;modTit.innerText="Aggiungi "+t;modal.style.display="flex";render();}
-function closeModal(){modal.style.display="none";}
+function openModal(t){ tipo=t; modTit.innerText="Aggiungi "+t; modal.style.display="flex"; render(); }
+function closeModal(){ modal.style.display="none"; }
 
 function addVoce(){
- if(+mImporto.value<=0)return;
- buffer[tipo].push({i:+mImporto.value,n:mNome.value||"Senza nome"});
- mImporto.value="";mNome.value="";render();
+  if(+mImporto.value<=0) return;
+  buffer[tipo].push({i:+mImporto.value,n:mNome.value||"Senza nome"});
+  mImporto.value=""; mNome.value="";
+  render();
 }
-
 function render(){
- lista.innerHTML="";
- buffer[tipo].forEach((v,i)=>{
-  lista.innerHTML+=`<div class="list-item">
-  <span>€${v.i} - ${v.n}</span>
-  <span onclick="buffer[tipo].splice(${i},1);render()">❌</span>
-  </div>`;
- });
+  lista.innerHTML="";
+  buffer[tipo].forEach((v,i)=>{
+    lista.innerHTML+=`
+    <div class="list-item">
+      <span>€${v.i} - ${v.n}</span>
+      <span onclick="buffer[tipo].splice(${i},1);render()">❌</span>
+    </div>`;
+  });
 }
 
 function salva(){
- if(!data.value)return alert("Data mancante");
- let m=data.value.slice(0,7);
- if(!db[m])db[m]=[];
+  if(!data.value) return alert("Inserisci la data");
+  let m=data.value.slice(0,7);
+  if(!db[m]) db[m]=[];
 
- let c=+incC.value||0,p=+incP.value||0,s=+incS.value||0;
+  let c=+incC.value||0;
+  let p=+incP.value||0;
+  let s=+incS.value||0;
 
- db[m].push({
-  data:data.value,
-  contanti:c,pos:p,sardex:s,
-  inc:c+p+s,
-  food:[...buffer.food],
-  nonfood:[...buffer.nonfood],
-  extra:[...buffer.extra],
-  acconti:[...buffer.acconti]
- });
+  db[m].push({
+    data:data.value,
+    contanti:c,
+    pos:p,
+    sardex:s,
+    inc:c+p+s,
+    food:[...buffer.food],
+    nonfood:[...buffer.nonfood],
+    extra:[...buffer.extra],
+    acconti:[...buffer.acconti]
+  });
 
- localStorage.setItem("rd",JSON.stringify(db));
- buffer={food:[],nonfood:[],extra:[],acconti:[]};
- mostraStorico();
+  localStorage.setItem("rd",JSON.stringify(db));
+  buffer={food:[],nonfood:[],extra:[],acconti:[]};
+  mostraStorico();
 }
 
-function toggle(el){el.style.display=el.style.display==="block"?"none":"block";}
+function toggle(el){ el.style.display = el.style.display==="block"?"none":"block"; }
+
+function sommaPerNome(arr,map){ arr.forEach(v=> map[v.n]=(map[v.n]||0)+v.i ); }
 
 function riepilogoMese(){
- let m=selMese.value;if(!db[m])return;
- let inc=0,c=0,p=0,s=0;
- let tot={food:{},nonfood:{},extra:{},acconti:{}};
+  let m=selMese.value;
+  if(!db[m]) return;
 
- db[m].forEach(g=>{
-  let cc=g.contanti||g.inc||0;
-  let pp=g.pos||0;
-  let ss=g.sardex||0;
-  inc+=g.inc||0;c+=cc;p+=pp;s+=ss;
- });
+  let tot={food:{},nonfood:{},extra:{},acconti:{}};
+  let inc=0,c=0,p=0,s=0;
 
- boxRiepilogo.innerHTML=`
- <strong>Incassi Totali €${inc}</strong>
- <div class="sep">Contanti €${c} · POS €${p} · Sardex €${s}</div>`;
+  db[m].forEach(g=>{
+    inc += g.inc || 0;
+    c += g.contanti || 0;
+    p += g.pos || 0;
+    s += g.sardex || 0;
+
+    sommaPerNome(g.food||[],tot.food);
+    sommaPerNome(g.nonfood||[],tot.nonfood);
+    sommaPerNome(g.extra||[],tot.extra);
+    sommaPerNome(g.acconti||[],tot.acconti);
+  });
+
+  let sp=[
+    ...Object.values(tot.food),
+    ...Object.values(tot.nonfood),
+    ...Object.values(tot.extra)
+  ].reduce((a,b)=>a+b,0);
+
+  boxRiepilogo.innerHTML=`
+    <strong>Incassi Totali €${inc}</strong>
+    <div class="sep">
+      <strong>Dettaglio incassi €${c+p+s}</strong>
+      <div>• Contanti: €${c}</div>
+      <div>• POS: €${p}</div>
+      <div>• Sardex: €${s}</div>
+    </div>
+    <div class="sep"><strong>Food €${Object.values(tot.food).reduce((a,b)=>a+b,0)}</strong></div>
+    <div class="sep"><strong>Non Food €${Object.values(tot.nonfood).reduce((a,b)=>a+b,0)}</strong></div>
+    <div class="sep"><strong>Extra €${Object.values(tot.extra).reduce((a,b)=>a+b,0)}</strong></div>
+    <div class="sep"><strong>Acconti €${Object.values(tot.acconti).reduce((a,b)=>a+b,0)}</strong></div>
+    <div class="sep"><strong>Utile €${inc-sp}</strong></div>
+  `;
 }
 
 function mostraStorico(){
- let html="";
- Object.keys(db).sort().reverse().forEach(m=>{
-  db[m].forEach(g=>{
-   let cc=g.contanti||g.inc||0;
-   let pp=g.pos||0;
-   let ss=g.sardex||0;
-   html+=`<div class="day-card">
-   <div class="day-header">${g.data}<span>€${g.inc}</span></div>
-   <div class="day-body">
-   <div class="small">Contanti €${cc} · POS €${pp} · Sardex €${ss}</div>
-   </div></div>`;
+  let html="";
+  Object.keys(db).sort().reverse().forEach((m,mi)=>{
+    let days="";
+    db[m].forEach((g,i)=>{
+      let sp=[...(g.food||[]),...(g.nonfood||[]),...(g.extra||[])].reduce((t,x)=>t+x.i,0);
+      days+=`
+      <div class="day-card">
+        <div class="day-header" onclick="toggle(document.getElementById('d${mi}_${i}'))">
+          ${formattaData(g.data)} <span>€${(g.inc||0)-sp}</span>
+        </div>
+        <div class="day-body" id="d${mi}_${i}">
+          <div class="small">Contanti €${g.contanti||0} · POS €${g.pos||0} · Sardex €${g.sardex||0}</div>
+        </div>
+      </div>`;
+    });
+    html+=`
+    <div class="month-card">
+      <div class="month-header" onclick="toggle(document.getElementById('m${mi}'))">${m}</div>
+      <div class="month-body" id="m${mi}">${days}</div>
+    </div>`;
   });
- });
- storico.innerHTML=html;
- selMese.innerHTML=Object.keys(db).sort().map(m=>`<option>${m}</option>`).join("");
- riepilogoMese();
+  storico.innerHTML=html;
+  selMese.innerHTML = Object.keys(db).sort().reverse().map(m=>`<option>${m}</option>`).join("");
+  riepilogoMese();
+}
+
+function formattaData(d){
+  let x=new Date(d);
+  return `${String(x.getDate()).padStart(2,'0')}/${String(x.getMonth()+1).padStart(2,'0')}/${x.getFullYear()}`;
 }
 
 mostraStorico();
