@@ -12,6 +12,7 @@ h1{text-align:center}
 input,button,select{width:100%;padding:10px;margin:6px 0;border:none;border-radius:8px}
 button{background:#b11218;color:#fff;font-weight:600}
 button.secondary{background:#333}
+button.danger{background:#555;color:#fff}
 .month-card,.day-card{border:1px solid #333;border-radius:10px;margin-bottom:10px}
 .month-header,.day-header{padding:10px;background:#222;cursor:pointer;display:flex;justify-content:space-between}
 .month-body,.day-body{display:none;padding:10px}
@@ -49,8 +50,20 @@ button.secondary{background:#333}
 <div id="storico"></div>
 </div>
 
+<div class="card">
+<button class="danger" onclick="resettaDati()">🗑️ Cancella TUTTI i dati</button>
+</div>
+
 <script>
 let db = JSON.parse(localStorage.getItem("rd")) || {};
+
+function resettaDati(){
+  if(!confirm("ATTENZIONE!\nVuoi cancellare TUTTI i dati?\nOperazione irreversibile.")) return;
+  localStorage.removeItem("rd");
+  db = {};
+  mostraStorico();
+  alert("Dati cancellati. Puoi reinserire tutto da capo.");
+}
 
 function toggle(el){
   el.style.display = el.style.display==="block" ? "none" : "block";
@@ -72,9 +85,9 @@ function blocco(t,a){
   return `<div class="sep"><strong>${t} €${s}</strong>${h}</div>`;
 }
 
-/* ===== INCASSI GIORNO (NUOVO, SOLO QUESTO) ===== */
+/* ===== INCASSI GIORNO ===== */
 function bloccoIncassiGiorno(g){
-  let tot = (g.contanti||0)+(g.pos||0)+(g.sardex||0);
+  let tot=(g.contanti||0)+(g.pos||0)+(g.sardex||0);
   return `
   <div class="sep">
     <div class="tot-header" onclick="toggle(this.nextElementSibling)">
@@ -117,7 +130,6 @@ function riepilogoMese(){
     c+=g.contanti||0;
     p+=g.pos||0;
     s+=g.sardex||0;
-
     sommaPerNome(g.food,tot.food);
     sommaPerNome(g.nonfood,tot.nonfood);
     sommaPerNome(g.extra,tot.extra);
@@ -134,7 +146,7 @@ function riepilogoMese(){
   `;
 }
 
-/* ===== STORICO GIORNI ===== */
+/* ===== STORICO ===== */
 
 function mostraStorico(){
   let html="";
