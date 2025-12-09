@@ -1,399 +1,239 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="UTF-8">
-<title>Rosso Dorato Asproni</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-body{background:#111;color:#eee;font-family:system-ui,Arial;padding:15px;min-height:100vh}
-h1{text-align:center;margin:8px 0}
-.card{background:#1c1c1c;border-radius:12px;padding:15px;margin-bottom:14px}
-input,button,select{width:100%;padding:10px;margin:8px 0;border:none;border-radius:8px;box-sizing:border-box}
-button{background:#b11218;color:#fff;font-weight:600}
-button.secondary{background:#333}
-.month-card,.day-card,.fattura-card{border:1px solid #333;border-radius:10px;margin-bottom:10px;overflow:hidden}
-.month-header,.day-header,.fattura-header{padding:10px;background:#222;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
-.month-body,.day-body,.fattura-body{display:none;padding:10px}
-.small{color:#bbb;font-size:13px}
-.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);justify-content:center;align-items:center;padding:12px}
-.modal-box{background:#1c1c1c;border-radius:12px;padding:14px;width:100%;max-width:520px;max-height:80vh;overflow:auto}
-.list-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #2a2a2a}
-.sep{margin-top:10px;border-top:1px dashed #444;padding-top:10px}
-.row{display:flex;justify-content:space-between;align-items:center}
-.action span{cursor:pointer;margin-left:10px;font-size:18px}
-.small-btn{background:#333;color:#fff;padding:8px;border-radius:8px;border:none;width:100%;margin-top:8px}
-.info{color:#bbb;font-size:13px}
-.debito{background:#ff6b35;color:#fff;padding:4px 8px;border-radius:4px;font-size:12px}
-.tot-header{cursor:pointer;font-weight:600;background:#1a1a1a;padding:8px;border-radius:6px;margin:6px 0}
-.tot-body{display:none;padding:8px}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rosso Dorato - Gestione Completa</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #ff6b6b, #4ecdc4); min-height: 100vh; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: white; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background: #ff6b6b; color: white; padding: 20px; text-align: center; }
+        .tabs { display: flex; background: #f8f9fa; flex-wrap: wrap; }
+        .tab { flex: 1; min-width: 120px; padding: 15px; text-align: center; cursor: pointer; border-bottom: 3px solid transparent; }
+        .tab.active { background: white; border-bottom-color: #ff6b6b; font-weight: bold; }
+        .tab-content { display: none; padding: 30px; }
+        .tab-content.active { display: block; }
+        input, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
+        button { background: #4ecdc4; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px; margin: 5px; }
+        button:hover { background: #45b7aa; }
+        .item { background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .item button { background: #ff6b6b; padding: 8px 12px; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #ff6b6b; color: white; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 20px; }
+        .stat { background: #e9ecef; padding: 20px; border-radius: 10px; text-align: center; }
+        .payment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
+        .today-highlight { background: #fff3cd !important; border: 2px solid #ffc107; }
+    </style>
 </head>
 <body>
-<h1>🍷 Rosso Dorato Asproni</h1>
-
-<div class="card">
-  <h2>Nuova giornata</h2>
-  <input type="date" id="data">
-  <input type="number" id="incC" placeholder="Incassi contanti">
-  <input type="number" id="incP" placeholder="Incassi POS">
-  <input type="number" id="incS" placeholder="Incassi Sardex">
-  <div style="display:flex;gap:8px">
-    <button style="flex:1" onclick="openModal('food')">➕ Food</button>
-    <button style="flex:1" onclick="openModal('nonfood')">➕ Non Food</button>
-  </div>
-  <div style="display:flex;gap:8px">
-    <button style="flex:1" onclick="openModal('extra')">➕ Extra</button>
-    <button style="flex:1" onclick="openModal('acconti')">➕ Acconti</button>
-  </div>
-  <button onclick="salva()" style="margin-top:8px">💾 Salva giornata</button>
-  <div class="info">Dopo salvataggio puoi modificare incassi o cancellare la giornata dallo storico.</div>
-</div>
-
-<div class="card">
-  <h2>📋 Fatture aperte</h2>
-  <div style="display:flex;gap:8px">
-    <button class="secondary" onclick="nuovaFattura()">➕ Nuova fattura</button>
-    <button class="secondary" onclick="mostraFatture()">↺ Aggiorna</button>
-  </div>
-  <div id="fattureAperte" style="margin-top:8px"></div>
-</div>
-
-<div class="card">
-  <h2>Riepilogo mese</h2>
-  <select id="selMese" onchange="riepilogoMese()"></select>
-  <button class="secondary" onclick="toggleAllDays()" style="margin-top:6px">📊 Mostra/Nascondi giorni</button>
-  <div id="boxRiepilogo" class="small" style="margin-top:8px"></div>
-</div>
-
-<div class="card">
-  <h2>Storico giornate</h2>
-  <div id="storico"></div>
-</div>
-
-<!-- MODALE -->
-<div class="modal" id="modal">
-  <div class="modal-box">
-    <h3 id="modTit"></h3>
-    <input type="number" id="mImporto" placeholder="Importo">
-    <input type="text" id="mNome" placeholder="Nome / Fornitore / Persona">
-    <div style="display:flex;gap:8px">
-      <button id="btnSave" class="small-btn" onclick="salvaVoce()">Aggiungi</button>
-      <button class="small-btn" style="background:#555" onclick="closeModal()">Chiudi</button>
-    </div>
-    <div id="lista" style="margin-top:10px"></div>
-  </div>
-</div>
-
-<script>
-/* ===== dati iniziali (localStorage) ===== */
-let db = {};        // giornate per mese: { "YYYY-MM": [ {data,contanti,pos,sardex,inc,food:[],... } ] }
-let fatture = {};   // fatture aperte: { id: {id,fornitore,tot,pagato} }
-try {
-  db = JSON.parse(localStorage.getItem("rd")) || {};
-  fatture = JSON.parse(localStorage.getItem("fatture")) || {};
-} catch(e){
-  db = {}; fatture = {};
-}
-
-/* buffer prima di salvare giornata */
-let buffer = {food:[],nonfood:[],extra:[],acconti:[]};
-let tipo = "";
-let edit = null; // {m,gi,tipo,i} per modificare voci già salvate
-
-/* ===== UI helper ===== */
-function openModal(t){
-  tipo = t; edit = null;
-  btnSave.innerText = "Aggiungi";
-  modTit.innerText = "Aggiungi " + t;
-  modal.style.display = "flex";
-  renderModalList();
-}
-function closeModal(){ modal.style.display = "none"; }
-function renderModalList(){
-  lista.innerHTML = "";
-  (buffer[tipo]||[]).forEach((v,i)=>{
-    lista.innerHTML += `<div class="list-item"><div>€${v.i.toFixed(2)} - ${v.n}</div><div style="cursor:pointer" onclick="buffer['${tipo}'].splice(${i},1);renderModalList()">🗑</div></div>`;
-  });
-}
-
-/* ===== aggiungi/modifica voce (modal) ===== */
-function salvaVoce(){
-  const val = +mImporto.value;
-  if(!(val>0)) return alert("Importo non valido");
-  if(edit){
-    const v = db[edit.m][edit.gi][edit.tipo][edit.i];
-    v.i = val; v.n = mNome.value || "Senza nome";
-    localStorage.setItem("rd", JSON.stringify(db));
-    edit = null; closeModal(); mostraStorico(); riepilogoMese();
-    return;
-  }
-  buffer[tipo].push({i: val, n: mNome.value || "Senza nome"});
-  mImporto.value = ""; mNome.value = "";
-  renderModalList();
-}
-
-/* ===== salva giornata ===== */
-function salva(){
-  if(!data.value) return alert("Inserisci la data");
-  const m = data.value.slice(0,7);
-  if(!db[m]) db[m] = [];
-
-  const c = +incC.value || 0;
-  const p = +incP.value || 0;
-  const s = +incS.value || 0;
-
-  const giornata = {
-    data: data.value,
-    contanti: c, pos: p, sardex: s, inc: c+p+s,
-    food: [...buffer.food], nonfood: [...buffer.nonfood],
-    extra: [...buffer.extra], acconti: [...buffer.acconti],
-    fatturePagate: []
-  };
-
-  db[m].push(giornata);
-  localStorage.setItem("rd", JSON.stringify(db));
-
-  // pulisco buffer e input
-  buffer = {food:[],nonfood:[],extra:[],acconti:[]};
-  data.value = ""; incC.value = ""; incP.value = ""; incS.value = "";
-
-  mostraStorico(); mostraFatture(); riepilogoMese();
-  alert("Giornata salvata ✅");
-}
-
-/* ===== fatture: aggiungi, paga, elimina ===== */
-function nuovaFattura(){
-  const tot = prompt("Importo totale fattura (es. 123.45):");
-  if(tot === null) return;
-  const forn = prompt("Nome fornitore / azienda:");
-  if(forn === null) return;
-  if(tot === "" || isNaN(tot)) return alert("Totale non valido");
-  const id = 'F' + Date.now();
-  fatture[id] = { id, fornitore: forn, tot: +tot, pagato: 0 };
-  localStorage.setItem("fatture", JSON.stringify(fatture));
-  mostraFatture();
-}
-
-function mostraFatture(){
-  let out = "";
-  const vals = Object.values(fatture).sort((a,b)=>a.fornitore.localeCompare(b.fornitore));
-  if(!vals.length) {
-    fattureAperte.innerHTML = "<div class='small'>Nessuna fattura aperta ✓</div>";
-    return;
-  }
-  vals.forEach(f=>{
-    const resto = Math.max(0, f.tot - f.pagato);
-    out += `<div class="fattura-card">
-      <div class="fattura-header">${f.fornitore} <span>resto €${resto.toFixed(2)} ${resto>0?'<span class="debito">Da pagare</span>':'<span style="color:#6f6">Pagata</span>'}</span></div>
-      <div class="fattura-body">
-        <div class="row"><div>Totale</div><div>€${f.tot.toFixed(2)}</div></div>
-        <div class="row"><div>Pagato</div><div>€${f.pagato.toFixed(2)}</div></div>
-        <div style="display:flex;gap:8px;margin-top:8px">
-          <input type="number" id="p_${f.id}" placeholder="Importo acconto" style="flex:1;padding:8px;border-radius:8px;border:none">
-          <button class="small-btn" onclick="pagaAccontoPrompt('${f.id}')">💰 Registra pagamento</button>
+    <div class="container">
+        <div class="header">
+            <h1>🍅 Rosso Dorato Gestione</h1>
+            <p>Magazzino • Ricette • Incassi • Ordini</p>
         </div>
-        <div style="display:flex;gap:8px;margin-top:8px">
-          <button class="secondary" onclick="eliminaFatturaConfirm('${f.id}')">🗑 Elimina fattura</button>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('incassi')">💰 Incassi</div>
+            <div class="tab" onclick="showTab('magazzino')">📦 Magazzino</div>
+            <div class="tab" onclick="showTab('ricette')">👨‍🍳 Ricette</div>
+            <div class="tab" onclick="showTab('ordini')">📋 Ordini</div>
+            <div class="tab" onclick="showTab('stats')">📊 Dashboard</div>
         </div>
-      </div>
-    </div>`;
-  });
-  fattureAperte.innerHTML = out;
-}
-
-/* paga acconto: registra la spesa nella giornata scelta (o oggi se non scelta) */
-function pagaAccontoPrompt(id){
-  const input = document.getElementById('p_' + id);
-  let val = input ? input.value : "";
-  if(!val) val = prompt("Importo da pagare (acconto):");
-  if(!val) return;
-  if(isNaN(val) || +val <= 0) return alert("Importo non valido");
-  const pag = +val;
-
-  // scegli la data in cui registrare la spesa (usa campo 'data' se impostato, altrimenti oggi)
-  const chosenDate = data.value || new Date().toISOString().slice(0,10);
-  const m = chosenDate.slice(0,7);
-  if(!db[m]) db[m] = [];
-
-  // crea (se non esiste) una giornata per quella data
-  let gi = db[m].findIndex(g => g.data === chosenDate);
-  if(gi === -1){
-    db[m].push({
-      data: chosenDate,
-      contanti: 0, pos: 0, sardex: 0, inc: 0,
-      food: [], nonfood: [], extra: [], acconti: [], fatturePagate: []
-    });
-    gi = db[m].findIndex(g => g.data === chosenDate);
-  }
-
-  // registra pagamento come spesa "Extra" e come voce fatturePagate
-  const descr = `Pagamento fattura ${fatture[id].fornitore} (${id})`;
-  db[m][gi].extra.push({ i: pag, n: descr });
-  db[m][gi].fatturePagate = db[m][gi].fatturePagate || [];
-  db[m][gi].fatturePagate.push({ i: pag, n: descr, id });
-
-  // aggiorna fattura (pagato) e rimuove se saldata
-  fatture[id].pagato = (fatture[id].pagato || 0) + pag;
-  if(fatture[id].pagato >= fatture[id].tot) {
-    delete fatture[id];
-  }
-
-  // salva
-  localStorage.setItem("rd", JSON.stringify(db));
-  localStorage.setItem("fatture", JSON.stringify(fatture));
-  mostraFatture(); mostraStorico(); riepilogoMese();
-  alert("Pagamento registrato");
-}
-
-function eliminaFatturaConfirm(id){
-  if(!confirm("Eliminare fattura aperta?")) return;
-  delete fatture[id];
-  localStorage.setItem("fatture", JSON.stringify(fatture));
-  mostraFatture();
-}
-
-/* ===== modifica incassi e cancellazione giornata ===== */
-function modificaIncassi(m,gi){
-  const g = db[m][gi];
-  const nc = prompt("Contanti (attuale: €" + (g.contanti||0).toFixed(2) + ")", (g.contanti||0));
-  if(nc === null) return;
-  const np = prompt("POS (attuale: €" + (g.pos||0).toFixed(2) + ")", (g.pos||0));
-  if(np === null) return;
-  const ns = prompt("Sardex (attuale: €" + (g.sardex||0).toFixed(2) + ")", (g.sardex||0));
-  if(ns === null) return;
-
-  g.contanti = parseFloat(nc) || 0;
-  g.pos = parseFloat(np) || 0;
-  g.sardex = parseFloat(ns) || 0;
-  g.inc = g.contanti + g.pos + g.sardex;
-  localStorage.setItem("rd", JSON.stringify(db));
-  mostraStorico(); riepilogoMese();
-  alert("Incassi aggiornati");
-}
-
-function eliminaGiornata(m,gi){
-  if(!confirm("Eliminare l'intera giornata?")) return;
-  db[m].splice(gi,1);
-  if(db[m].length === 0) delete db[m];
-  localStorage.setItem("rd", JSON.stringify(db));
-  mostraStorico(); riepilogoMese();
-}
-
-/* ===== visualizzazioni & calcoli (storico e riepilogo) ===== */
-function toggle(el){ el.style.display = el.style.display==="block" ? "none" : "block"; }
-
-function sommaPerNome(arr,map){
-  (arr||[]).forEach(v => map[v.n] = (map[v.n]||0) + v.i );
-}
-
-function blocco(t,arr,m,gi,tipo){
-  if(!arr || !arr.length) return `<div class="sep"><strong>${t} €0.00</strong></div>`;
-  let sum = 0;
-  const html = arr.map((v,i)=>{
-    sum += v.i;
-    return `<div class="row"><div>€${v.i.toFixed(2)} - ${v.n}</div><div class="action"><span title="Modifica" onclick="modificaVoce('${m}',${gi},'${tipo}',${i})">✏️</span><span title="Elimina" onclick="eliminaVoce('${m}',${gi},'${tipo}',${i})">🗑</span></div></div>`;
-  }).join("");
-  return `<div class="sep"><strong>${t} €${sum.toFixed(2)}</strong>${html}</div>`;
-}
-
-function modificaVoce(m,gi,tipo,i){
-  edit = {m,gi,tipo,i};
-  const v = db[m][gi][tipo][i];
-  mImporto.value = v.i;
-  mNome.value = v.n;
-  btnSave.innerText = "Salva modifica";
-  modTit.innerText = "Modifica " + tipo;
-  modal.style.display = "flex";
-}
-
-function eliminaVoce(m,gi,tipo,i){
-  if(!confirm("Eliminare voce?")) return;
-  db[m][gi][tipo].splice(i,1);
-  localStorage.setItem("rd", JSON.stringify(db));
-  mostraStorico(); riepilogoMese();
-}
-
-/* riepilogo mese dettagliato (totali + sub-totali per nome) */
-function riepilogoMese(){
-  const sel = document.getElementById("selMese");
-  const m = sel.value;
-  if(!m || !db[m]) { boxRiepilogo.innerHTML = "<div class='info'>Seleziona un mese con dati.</div>"; return; }
-
-  const tot = {inc:0, contanti:0, pos:0, sardex:0, food:{}, nonfood:{}, extra:{}, acconti:{}};
-  db[m].forEach(g=>{
-    tot.inc += g.inc || 0;
-    tot.contanti += g.contanti || 0;
-    tot.pos += g.pos || 0;
-    tot.sardex += g.sardex || 0;
-    sommaPerNome(g.food, tot.food);
-    sommaPerNome(g.nonfood, tot.nonfood);
-    sommaPerNome(g.extra, tot.extra);
-    sommaPerNome(g.acconti, tot.acconti);
-  });
-
-  function bloccoTot(tid,title,obj){
-    const total = Object.values(obj).reduce((a,b)=>a+b,0);
-    const lines = Object.keys(obj).map(k=>`<div>• ${k}: €${obj[k].toFixed(2)}</div>`).join("") || "<div>—</div>";
-    return `<div class="sep"><div class="tot-header" onclick="toggle(document.getElementById('${tid}'))">${title} €${total.toFixed(2)}</div><div class="tot-body" id="${tid}">${lines}</div></div>`;
-  }
-
-  boxRiepilogo.innerHTML = `
-    <div class="tot-header">📊 Totali mese: Incassi €${tot.inc.toFixed(2)} | Contanti €${tot.contanti.toFixed(2)} | POS €${tot.pos.toFixed(2)} | Sardex €${tot.sardex.toFixed(2)}</div>
-    ${bloccoTot('btf','Food',tot.food)}
-    ${bloccoTot('btnf','Non Food',tot.nonfood)}
-    ${bloccoTot('bte','Extra',tot.extra)}
-    ${bloccoTot('bta','Acconti',tot.acconti)}
-  `;
-}
-
-/* storico */
-function mostraStorico(){
-  let out = ""; selMese.innerHTML = "";
-  Object.keys(db).sort().reverse().forEach(m=>{
-    selMese.options.add(new Option(m,m));
-    let days = "";
-    db[m].forEach((g,gi)=>{
-      const sp = [...(g.food||[]), ...(g.nonfood||[]), ...(g.extra||[])].reduce((t,x)=>t+x.i,0);
-      const net = (g.inc||0) - sp;
-      days += `<div class="day-card">
-        <div class="day-header">
-          <div style="flex:1;cursor:pointer" onclick="toggle(document.getElementById('d_${m}_${gi}'))">${formattaData(g.data)}</div>
-          <div style="text-align:right">
-            <div class="info">Netto €${net.toFixed(2)}</div>
-            <div style="margin-top:6px;display:flex;gap:6px">
-              <button class="small-btn" onclick="event.stopPropagation(); modificaIncassi('${m}',${gi})">Modifica incassi</button>
-              <button class="small-btn" style="background:#8b0000" onclick="event.stopPropagation(); eliminaGiornata('${m}',${gi})">Elimina giornata</button>
+        
+        <div id="incassi" class="tab-content active">
+            <h2>💰 Incassi Giornalieri</h2>
+            <input id="incassoData" type="date" onchange="updateDisplay()">
+            <div class="payment-grid">
+                <input id="posAmount" type="number" step="0.01" placeholder="POS (€)">
+                <input id="cashAmount" type="number" step="0.01" placeholder="Contanti (€)">
+                <input id="sardexAmount" type="number" step="0.01" placeholder="Sardex (cr.)">
+                <input id="noteAmount" style="grid-column: span 3;" placeholder="Note/Altro">
             </div>
-          </div>
+            <button onclick="addIncasso()">➕ Registra Incasso</button>
+            <div id="incassiList"></div>
         </div>
-        <div class="day-body" id="d_${m}_${gi}">
-          <div class="info">Incassi: Contanti €${(g.contanti||0).toFixed(2)} • POS €${(g.pos||0).toFixed(2)} • Sardex €${(g.sardex||0).toFixed(2)}</div>
-          ${blocco('Food', g.food, m, gi, 'food')}
-          ${blocco('Non Food', g.nonfood, m, gi, 'nonfood')}
-          ${blocco('Extra', g.extra, m, gi, 'extra')}
-          ${blocco('Acconti', g.acconti, m, gi, 'acconti')}
-          ${g.fatturePagate && g.fatturePagate.length ? '<div class="sep"><strong>Fatture pagate</strong>' + g.fatturePagate.map(fp=>`<div>€${fp.i.toFixed(2)} - ${fp.n}</div>`).join('') + '</div>' : ''}
+        
+        <div id="magazzino" class="tab-content">
+            <h2>📦 Magazzino</h2>
+            <input id="itemName" placeholder="Farina 00">
+            <input id="itemQty" type="number" placeholder="Quantità (kg)">
+            <input id="itemPrice" type="number" step="0.01" placeholder="Prezzo (€/kg)">
+            <button onclick="addItem()">➕ Aggiungi</button>
+            <div id="inventoryList"></div>
         </div>
-      </div>`;
-    });
-    out += `<div class="month-card"><div class="month-header" onclick="toggle(this.nextElementSibling)">${m}</div><div class="month-body">${days}</div></div>`;
-  });
-  storico.innerHTML = out;
-  if(selMese.options.length) selMese.selectedIndex = 0;
-  mostraFatture(); riepilogoMese();
-}
+        
+        <div id="ricette" class="tab-content">
+            <h2>👨‍🍳 Ricette</h2>
+            <input id="recipeName" placeholder="Pizza Margherita">
+            <input id="recipeCost" type="number" step="0.01" placeholder="Costo Totale (€)">
+            <input id="recipePrice" type="number" step="0.01" placeholder="Prezzo Vendita (€)">
+            <button onclick="addRecipe()">➕ Salva Ricetta</button>
+            <div id="recipesList"></div>
+        </div>
+        
+        <div id="ordini" class="tab-content">
+            <h2>📋 Ordini Fornitori</h2>
+            <input id="orderSupplier" placeholder="Fornitore">
+            <input id="orderTotal" type="number" step="0.01" placeholder="Totale (€)">
+            <button onclick="addOrder()">➕ Nuovo Ordine</button>
+            <div id="ordersList"></div>
+        </div>
+        
+        <div id="stats" class="tab-content">
+            <h2>📊 Dashboard Oggi</h2>
+            <div class="stats">
+                <div class="stat">
+                    <h3 id="todayTotal">0€</h3>
+                    <p>Incassi Oggi</p>
+                </div>
+                <div class="stat">
+                    <h3 id="posTotal">0€</h3>
+                    <p>POS</p>
+                </div>
+                <div class="stat">
+                    <h3 id="cashTotal">0€</h3>
+                    <p>Contanti</p>
+                </div>
+                <div class="stat">
+                    <h3 id="sardexTotal">0</h3>
+                    <p>Sardex</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-/* util */
-function toggleAllDays(){
-  document.querySelectorAll('.day-body').forEach(b => b.style.display = (b.style.display === 'block' ? 'none' : 'block'));
-}
-function formattaData(d){
-  const x = new Date(d);
-  return `${String(x.getDate()).padStart(2,'0')}/${String(x.getMonth()+1).padStart(2,'0')}/${x.getFullYear()}`;
-}
+    <script>
+        let inventory = JSON.parse(localStorage.getItem('inventory')) || [];
+        let recipes = JSON.parse(localStorage.getItem('recipes')) || [];
+        let orders = JSON.parse(localStorage.getItem('orders')) || [];
+        let incassi = JSON.parse(localStorage.getItem('incassi')) || [];
 
-/* init */
-mostraStorico();
-</script>
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('incassoData').value = today;
+
+        function showTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(tab).classList.add('active');
+            event.target.classList.add('active');
+            updateDisplay();
+        }
+
+        function addIncasso() {
+            const data = document.getElementById('incassoData').value;
+            const pos = parseFloat(document.getElementById('posAmount').value) || 0;
+            const cash = parseFloat(document.getElementById('cashAmount').value) || 0;
+            const sardex = parseFloat(document.getElementById('sardexAmount').value) || 0;
+            const note = document.getElementById('noteAmount').value;
+            
+            if (pos || cash || sardex) {
+                incassi.push({data, pos, cash, sardex, note, total: pos+cash});
+                localStorage.setItem('incassi', JSON.stringify(incassi));
+                document.getElementById('posAmount').value = '';
+                document.getElementById('cashAmount').value = '';
+                document.getElementById('sardexAmount').value = '';
+                document.getElementById('noteAmount').value = '';
+                updateIncassi();
+                updateDisplay();
+            }
+        }
+
+        function updateIncassi() {
+            const list = document.getElementById('incassiList');
+            list.innerHTML = incassi.map((inc, i) => 
+                `<div class="item ${inc.data === today ? 'today-highlight' : ''}">
+                    ${inc.data}: POS ${inc.pos.toFixed(2)}€ + Contanti ${inc.cash.toFixed(2)}€ + Sardex ${inc.sardex}cr ${inc.note ? '• ' + inc.note : ''}
+                    <div><strong>Tot: ${(inc.pos+inc.cash).toFixed(2)}€</strong> <button onclick="removeIncasso(${i})">🗑️</button></div>
+                </div>`
+            ).join('');
+        }
+
+        // [Le altre funzioni rimangono identiche: addItem, addRecipe, addOrder, updateInventory, etc.]
+        function addItem() {
+            const name = document.getElementById('itemName').value;
+            const qty = parseFloat(document.getElementById('itemQty').value);
+            const price = parseFloat(document.getElementById('itemPrice').value);
+            if (name && qty && price) {
+                inventory.push({name, qty, price, value: qty*price});
+                localStorage.setItem('inventory', JSON.stringify(inventory));
+                document.getElementById('itemName').value = '';
+                document.getElementById('itemQty').value = '';
+                document.getElementById('itemPrice').value = '';
+                updateInventory();
+            }
+        }
+
+        function updateInventory() {
+            const list = document.getElementById('inventoryList');
+            list.innerHTML = inventory.map((item, i) => 
+                `<div class="item">${item.name}: ${item.qty}kg @ ${item.price}€ = ${item.value.toFixed(2)}€ <button onclick="removeItem(${i})">🗑️</button></div>`
+            ).join('');
+        }
+
+        function addRecipe() {
+            const name = document.getElementById('recipeName').value;
+            const cost = parseFloat(document.getElementById('recipeCost').value);
+            const price = parseFloat(document.getElementById('recipePrice').value);
+            if (name && cost && price) {
+                recipes.push({name, cost, price, profit: price-cost});
+                localStorage.setItem('recipes', JSON.stringify(recipes));
+                document.getElementById('recipeName').value = '';
+                document.getElementById('recipeCost').value = '';
+                document.getElementById('recipePrice').value = '';
+                updateRecipes();
+            }
+        }
+
+        function updateRecipes() {
+            const list = document.getElementById('recipesList');
+            list.innerHTML = recipes.map((r, i) => 
+                `<div class="item">${r.name}: ${r.cost.toFixed(2)}€ → ${r.price.toFixed(2)}€ (Margine: ${r.profit.toFixed(2)}€) <button onclick="removeRecipe(${i})">🗑️</button></div>`
+            ).join('');
+        }
+
+        function addOrder() {
+            const supplier = document.getElementById('orderSupplier').value;
+            const total = parseFloat(document.getElementById('orderTotal').value);
+            if (supplier && total) {
+                orders.push({supplier, total, date: new Date().toLocaleDateString()});
+                localStorage.setItem('orders', JSON.stringify(orders));
+                document.getElementById('orderSupplier').value = '';
+                document.getElementById('orderTotal').value = '';
+                updateOrders();
+            }
+        }
+
+        function updateOrders() {
+            const list = document.getElementById('ordersList');
+            list.innerHTML = orders.map((o, i) => 
+                `<div class="item">${o.supplier}: ${o.total.toFixed(2)}€ (${o.date}) <button onclick="removeOrder(${i})">🗑️</button></div>`
+            ).join('');
+        }
+
+        function updateDisplay() {
+            const todayIncassi = incassi.filter(i => i.data === today);
+            const todayTotal = todayIncassi.reduce((sum, i) => sum + i.total, 0);
+            const posTotal = todayIncassi.reduce((sum, i) => sum + i.pos, 0);
+            const cashTotal = todayIncassi.reduce((sum, i) => sum + i.cash, 0);
+            const sardexTotal = todayIncassi.reduce((sum, i) => sum + i.sardex, 0);
+            
+            document.getElementById('todayTotal').textContent = todayTotal.toFixed(2) + '€';
+            document.getElementById('posTotal').textContent = posTotal.toFixed(2) + '€';
+            document.getElementById('cashTotal').textContent = cashTotal.toFixed(2) + '€';
+            document.getElementById('sardexTotal').textContent = sardexTotal + ' cr';
+            
+            updateIncassi();
+        }
+
+        function removeIncasso(i) { incassi.splice(i,1); localStorage.setItem('incassi', JSON.stringify(incassi)); updateDisplay(); }
+        function removeItem(i) { inventory.splice(i,1); localStorage.setItem('inventory', JSON.stringify(inventory)); updateInventory(); }
+        function removeRecipe(i) { recipes.splice(i,1); localStorage.setItem('recipes', JSON.stringify(recipes)); updateRecipes(); }
+        function removeOrder(i) { orders.splice(i,1); localStorage.setItem('orders', JSON.stringify(orders)); updateOrders(); }
+
+        updateDisplay();
+    </script>
 </body>
 </html>
