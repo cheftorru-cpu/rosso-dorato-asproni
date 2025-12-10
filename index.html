@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🍅 Rosso Dorato - COMPLETO PRO</title>
+    <title>🍅 Rosso Dorato - ULTIMO</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, sans-serif; background: linear-gradient(135deg, #ff6b6b, #4ecdc4); min-height: 100vh; padding: 15px; }
-        .container { max-width: 950px; margin: 0 auto; background: white; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); overflow: hidden; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); overflow: hidden; }
         .header { background: #ff6b6b; color: white; padding: 25px; text-align: center; }
         .tabs { display: flex; background: #f8f9fa; flex-wrap: wrap; }
         .tab { flex: 1; min-width: 140px; padding: 20px; text-align: center; cursor: pointer; border-bottom: 4px solid transparent; font-weight: bold; }
@@ -18,73 +18,80 @@
         .input-row-2 { grid-template-columns: 1fr 1fr; }
         input, select { padding: 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; }
         input:focus { border-color: #4ecdc4; outline: none; }
-        button { background: #4ecdc4; color: white; border: none; padding: 15px 20px; border-radius: 10px; font-size: 16px; cursor: pointer; font-weight: bold; }
+        button { background: #4ecdc4; color: white; border: none; padding: 12px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: bold; margin: 2px; }
         button:hover { background: #45b7aa; }
-        .item { background: #f8f9fa; padding: 20px; margin: 15px 0; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 16px; }
-        .item button { background: #ff6b6b; padding: 10px 15px; font-size: 14px; min-width: 80px; margin-left: 5px; }
-        .item button.edit { background: #ffc107; }
+        button.edit { background: #ffc107; color: black; }
+        button.delete { background: #ff6b6b; }
+        .item { background: #f8f9fa; padding: 20px; margin: 15px 0; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 16px; cursor: pointer; }
+        .item:hover { background: #e9ecef; }
+        .dropdown { position: relative; display: inline-block; }
+        .dropdown-content { 
+            display: none; position: absolute; background: white; min-width: 200px; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2); border-radius: 12px; z-index: 1; 
+            top: 100%; right: 0; padding: 10px; 
+        }
+        .dropdown:hover .dropdown-content { display: block; }
         .posticipato { background: #fff3cd !important; border-left: 5px solid #ffc107; }
         .acconto { background: #e3f2fd !important; border-left: 5px solid #2196f3; }
         .saldato { background: #d4edda !important; border-left: 5px solid #28a745; }
         .scorta-bassa { background: #ffebee !important; border-left: 5px solid #f44336; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(244,67,54,0.7); } 70% { box-shadow: 0 0 0 10px rgba(244,67,54,0); } 100% { box-shadow: 0 0 0 0 rgba(244,67,54,0); } }
+        @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(244,67,54,0.7);} 50%{box-shadow:0 0 0 10px rgba(244,67,54,0);} }
         .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin: 30px 0; }
-        .stat { background: linear-gradient(135deg, #ff6b6b, #ff8e8e); color: white; padding: 20px; border-radius: 15px; text-align: center; font-size: 18px; font-weight: bold; }
+        .stat { background: linear-gradient(135deg, #ff6b6b, #ff8e8e); color: white; padding: 20px; border-radius: 15px; text-align: center; font-size: 18px; font-weight: bold; cursor: pointer; }
+        .stat:hover { transform: scale(1.02); }
         .alert { background: #ffebee; border: 2px solid #f44336; border-radius: 12px; padding: 20px; margin: 20px 0; text-align: center; font-weight: bold; color: #c62828; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #ddd; }
-        th { background: #ff6b6b; color: white; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>🍅 Rosso Dorato PRO</h1>
-            <p>Incassi • Magazzino Uso • Fatture Modificabili</p>
+            <p>Incassi • Magazzino Completo • Fatture Cliccabili</p>
         </div>
         
         <div class="tabs">
             <div class="tab active" onclick="showTab('incassi')">💰 Incassi</div>
             <div class="tab" onclick="showTab('magazzino')">📦 Magazzino</div>
             <div class="tab" onclick="showTab('fatture')">📄 Fatture</div>
-            <div class="tab" onclick="showTab('stats')">📊 Totale</div>
+            <div class="tab" onclick="showTab('stats')">📊 Dashboard</div>
         </div>
         
         <div id="incassi" class="tab-content active">
-            <h2>💰 Incassi Oggi</h2>
+            <h2>💰 Incassi</h2>
             <div class="input-row input-row-2">
                 <input id="pos" type="number" step="0.01" placeholder="POS (€)">
                 <input id="contanti" type="number" step="0.01" placeholder="Contanti (€)">
-                <input id="sardex" type="number" step="0.01" placeholder="Sardex (cr)">
+                <input id="sardex" type="number" step="0.01" placeholder="Sardex">
                 <button onclick="addIncasso()">➕ SALVA</button>
             </div>
             <div id="listaIncassi"></div>
         </div>
         
         <div id="magazzino" class="tab-content">
-            <h2>📦 Magazzino (Usa/Modifica)</h2>
+            <h2>📦 Magazzino Completo</h2>
             <div class="input-row">
-                <input id="descMag" placeholder="Farina 00">
-                <input id="qtaMag" type="number" placeholder="Kg/Lt">
+                <input id="descMag" placeholder="Farina/Pomodori/Birra/Light/Detergenti...">
+                <input id="qtaMag" type="number" step="0.1" placeholder="Kg/Pezzi/Lt">
                 <input id="costoMag" type="number" step="0.01" placeholder="€">
                 <select id="tipoMag">
                     <option value="food">🍗 FOOD</option>
+                    <option value="bevande">🍺 BEVANDE</option>
                     <option value="nonfood">🧼 NON FOOD</option>
                 </select>
-                <button onclick="addMagazzino()">➕ NUOVO</button>
+                <button onclick="addMagazzino()">➕ AGGIUNGI</button>
             </div>
             <div class="input-row">
-                <input id="usaDesc" placeholder="Farina usata oggi">
-                <input id="usaQta" type="number" step="0.1" placeholder="Kg usati">
+                <input id="usaDesc" placeholder="Cosa hai usato oggi">
+                <input id="usaQta" type="number" step="0.1" placeholder="Quantità usata">
                 <button onclick="usaMagazzino()" style="grid-column: span 2">➖ USA</button>
             </div>
             <div id="listaMagazzino"></div>
         </div>
         
         <div id="fatture" class="tab-content">
-            <h2>📄 Fatture (Modifica Pagamento)</h2>
+            <h2>📄 Fatture Fornitori</h2>
             <div class="input-row">
-                <input id="fornitore" placeholder="Metro">
+                <input id="fornitore" placeholder="Metro/Sysdata/Etc">
                 <input id="importo" type="number" step="0.01" placeholder="€">
                 <input id="dataFattura" type="date">
                 <select id="statoFattura">
@@ -98,13 +105,27 @@
         </div>
         
         <div id="stats" class="tab-content">
-            <h2>📊 DASHBOARD</h2>
+            <h2>📊 DASHBOARD LIVE</h2>
             <div id="alertScorte"></div>
             <div class="stats">
-                <div class="stat">Incassi Oggi<br><span id="totIncassiOggi">0€</span></div>
-                <div class="stat">Food Spend<br><span id="totFood">0€</span></div>
-                <div class="stat">Non Food<br><span id="totNonFood">0€</span></div>
-                <div class="stat">Da Saldare<br><span id="daSaldare">0€</span></div>
+                <div class="stat dropdown" onclick="showIncassiDettaglio()">
+                    Incassi Oggi<br><span id="totIncassiOggi">0€</span>
+                    <div class="dropdown-content">
+                        <div id="incassiDettaglio"></div>
+                    </div>
+                </div>
+                <div class="stat dropdown" onclick="showFoodDettaglio()">
+                    Food<br><span id="totFood">0€</span>
+                    <div class="dropdown-content">
+                        <div id="foodDettaglio"></div>
+                    </div>
+                </div>
+                <div class="stat dropdown" onclick="showDaSaldareDettaglio()">
+                    Da Saldare<br><span id="daSaldare">0€</span>
+                    <div class="dropdown-content">
+                        <div id="daSaldareDettaglio"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -131,10 +152,8 @@
                 const data = new Date().toLocaleDateString('it-IT');
                 incassi.unshift({data, pos, contanti, sardex, totale});
                 localStorage.setItem('incassiRD', JSON.stringify(incassi));
-                document.getElementById('pos').value = '';
-                document.getElementById('contanti').value = '';
-                document.getElementById('sardex').value = '';
-                updateIncassi();
+                document.getElementById('pos').value = ''; document.getElementById('contanti').value = ''; document.getElementById('sardex').value = '';
+                updateIncassi(); updateDisplay();
             }
         }
         
@@ -146,10 +165,8 @@
             if (desc && qta > 0 && costo > 0) {
                 magazzino.push({desc, qta, resto: qta, costo, tipo, data: new Date().toLocaleDateString('it-IT')});
                 localStorage.setItem('magazzinoRD', JSON.stringify(magazzino));
-                document.getElementById('descMag').value = '';
-                document.getElementById('qtaMag').value = '';
-                document.getElementById('costoMag').value = '';
-                updateMagazzino();
+                document.getElementById('descMag').value = ''; document.getElementById('qtaMag').value = ''; document.getElementById('costoMag').value = '';
+                updateMagazzino(); updateDisplay();
             }
         }
         
@@ -159,21 +176,10 @@
             const item = magazzino.find(m => m.desc.toLowerCase() === desc.toLowerCase());
             if (item && qtaUsata > 0 && item.resto >= qtaUsata) {
                 item.resto -= qtaUsata;
-                item.costoGiornaliero = (item.costo / item.qta) * qtaUsata;
                 localStorage.setItem('magazzinoRD', JSON.stringify(magazzino));
-                document.getElementById('usaDesc').value = '';
-                document.getElementById('usaQta').value = '';
-                updateMagazzino();
+                document.getElementById('usaDesc').value = ''; document.getElementById('usaQta').value = '';
+                updateMagazzino(); updateDisplay();
             }
-        }
-        
-        function modificaFattura(index) {
-            const stati = ['posticipato', 'acconto', 'saldato'];
-            const statoAttuale = fatture[index].stato;
-            const prossimo = stati[(stati.indexOf(statoAttuale) + 1) % 3];
-            fatture[index].stato = prossimo;
-            localStorage.setElement('fattureRD', JSON.stringify(fatture));
-            updateFatture();
         }
         
         function addFattura() {
@@ -184,56 +190,74 @@
             if (fornitore && importo > 0) {
                 fatture.push({fornitore, importo, data, stato});
                 localStorage.setItem('fattureRD', JSON.stringify(fatture));
-                document.getElementById('fornitore').value = '';
-                document.getElementById('importo').value = '';
-                document.getElementById('dataFattura').value = '';
-                updateFatture();
+                document.getElementById('fornitore').value = ''; document.getElementById('importo').value = ''; document.getElementById('dataFattura').value = '';
+                updateFatture(); updateDisplay();
             }
         }
         
         function updateIncassi() {
-            const lista = document.getElementById('listaIncassi');
-            lista.innerHTML = incassi.slice(0,8).map((inc, i) => 
-                `<div class="item">
-                    <div>${inc.data}: POS ${inc.pos.toFixed(0)}€ + Contanti ${inc.contanti.toFixed(0)}€ = <strong>${inc.totale.toFixed(0)}€</strong></div>
-                    <button onclick="removeIncasso(${i})">🗑️</button>
+            document.getElementById('listaIncassi').innerHTML = incassi.slice(0,10).map((inc, i) => 
+                `<div class="item dropdown">
+                    <div>${inc.data}: <strong>${inc.totale.toFixed(0)}€</strong> POS:${inc.pos.toFixed(0)} Cont:${inc.contanti.toFixed(0)}${inc.sardex>0?' Sardex:'+inc.sardex:''}</div>
+                    <div>
+                        <button class="edit" onclick="editIncasso(${i})">✏️</button>
+                        <button class="delete" onclick="removeIncasso(${i})">🗑️</button>
+                    </div>
+                    <div class="dropdown-content">
+                        <button onclick="editIncasso(${i})">Modifica</button>
+                        <button class="delete" onclick="removeIncasso(${i})">Elimina</button>
+                    </div>
                 </div>`
             ).join('');
         }
         
         function updateMagazzino() {
-            const lista = document.getElementById('listaMagazzino');
-            const scorteBasse = magazzino.filter(m => m.resto <= 5 && m.tipo === 'food');
-            lista.innerHTML = magazzino.slice(-10).reverse().map((item, i) => {
+            document.getElementById('listaMagazzino').innerHTML = magazzino.slice(0,15).map((item, i) => {
                 const className = item.resto <= 5 && item.tipo === 'food' ? 'scorta-bassa' : '';
-                return `<div class="item ${className}">
+                return `<div class="item dropdown ${className}">
                     <div>
                         <div style="font-weight:bold">${item.desc}</div>
-                        <div>${item.resto.toFixed(1)}/${item.qta} ${item.tipo === 'food' ? '🍗' : '🧼'} ${item.costo.toFixed(0)}€ tot</div>
-                        ${item.costoGiornaliero ? `<div style="color:#f44336">Oggi usato: ${item.costoGiornaliero.toFixed(1)}€</div>` : ''}
+                        <div>${item.resto.toFixed(1)}/${item.qta} ${item.tipo==='food'?'🍗':item.tipo==='bevande'?'🍺':'🧼'} €${item.costo.toFixed(0)}tot</div>
                     </div>
                     <div>
-                        <button class="edit" onclick="modificaMagazzino(${magazzino.length - 1 - i})">✏️</button>
-                        <button onclick="removeMagazzino(${magazzino.length - 1 - i})">🗑️</button>
+                        <button class="edit" onclick="editMagazzino(${i})">✏️</button>
+                        <button class="delete" onclick="removeMagazzino(${i})">🗑️</button>
+                    </div>
+                    <div class="dropdown-content">
+                        <button onclick="editMagazzino(${i})">Modifica</button>
+                        <button class="delete" onclick="removeMagazzino(${i})">Elimina</button>
                     </div>
                 </div>`;
             }).join('');
         }
         
         function updateFatture() {
-            const lista = document.getElementById('listaFatture');
-            lista.innerHTML = fatture.slice(-10).reverse().map((f, i) => 
-                `<div class="item ${f.stato}">
+            document.getElementById('listaFatture').innerHTML = fatture.slice(0,15).map((f, i) => 
+                `<div class="item dropdown ${f.stato}">
                     <div>
                         <div style="font-weight:bold">${f.fornitore}</div>
-                        <div>${f.importo.toFixed(2)}€ - ${f.data}</div>
+                        <div>€${f.importo.toFixed(2)} ${f.data} <span style="color:${f.stato==='saldato'?'green':'orange'}">${f.stato}</span></div>
                     </div>
                     <div>
-                        <button class="edit" onclick="modificaFattura(${fatture.length - 1 - i})">➡️ ${f.stato.toUpperCase()}</button>
-                        <button onclick="removeFattura(${fatture.length - 1 - i})">🗑️</button>
+                        <button class="edit" onclick="cambiaStatoFattura(${i})">➡️ ${f.stato}</button>
+                        <button class="delete" onclick="removeFattura(${i})">🗑️</button>
+                    </div>
+                    <div class="dropdown-content">
+                        <button onclick="cambiaStatoFattura(${i})">Cambia Stato</button>
+                        <button class="delete" onclick="removeFattura(${i})">Elimina</button>
                     </div>
                 </div>`
             ).join('');
+        }
+        
+        function cambiaStatoFattura(i) {
+            const stati = ['posticipato', 'acconto', 'saldato'];
+            const attuale = fatture[i].stato;
+            const prossimo = stati[(stati.indexOf(attuale) + 1) % 3];
+            fatture[i].stato = prossimo;
+            fattures[i].dataPagamento = new Date().toLocaleDateString('it-IT'); // Registra giorno pagamento
+            localStorage.setItem('fattureRD', JSON.stringify(fatture));
+            updateFatture(); updateDisplay();
         }
         
         function updateDisplay() {
@@ -242,25 +266,29 @@
             const totIncassiOggi = oggiIncasso ? oggiIncasso.totale : 0;
             
             const foodTot = magazzino.filter(m => m.tipo === 'food').reduce((sum, m) => sum + m.costo, 0);
-            const nonfoodTot = magazzino.filter(m => m.tipo === 'nonfood').reduce((sum, m) => sum + m.costo, 0);
             const daSaldare = fatture.filter(f => f.stato !== 'saldato').reduce((sum, f) => sum + f.importo, 0);
             
             document.getElementById('totIncassiOggi').textContent = totIncassiOggi.toFixed(0) + '€';
             document.getElementById('totFood').textContent = foodTot.toFixed(0) + '€';
-            document.getElementById('totNonFood').textContent = nonfoodTot.toFixed(0) + '€';
             document.getElementById('daSaldare').textContent = daSaldare.toFixed(0) + '€';
             
-            // Alert scorte
-            const scorteBasse = magazzino.filter(m => m.resto <= 5 && m.tipo === 'food');
-            document.getElementById('alertScorte').innerHTML = scorteBasse.length > 0 ? 
-                `<div class="alert">🚨 SCORTE CRITICHE: ${scorteBasse.map(s => s.desc).join(', ')} (${scorteBasse.map(s => s.resto.toFixed(1) + 'kg').join(', ')})</div>` : '';
+            // Dettagli dropdown
+            document.getElementById('incassiDettaglio').innerHTML = oggiIncasso ? 
+                `POS: ${oggiIncasso.pos.toFixed(0)}€<br>Contanti: ${oggiIncasso.contanti.toFixed(0)}€` : 'Nessun incasso';
+            document.getElementById('foodDettaglio').innerHTML = magazzino.filter(m=>m.tipo==='food').slice(0,3).map(m=>`${m.desc}: ${m.resto.toFixed(1)}kg`).join('<br>');
+            document.getElementById('daSaldareDettaglio').innerHTML = fatture.filter(f=>f.stato!=='saldato').slice(0,3).map(f=>`${f.fornitore}: ${f.importo.toFixed(0)}€`).join('<br>');
+            
+            // Alert
+            const scorteBasse = magazzino.filter(m => m.resto <= 5 && ['food','bevande'].includes(m.tipo));
+            document.getElementById('alertScorte').innerHTML = scorteBasse.length ? 
+                `<div class="alert">🚨 ${scorteBasse.map(s=>`${s.desc} (${s.resto.toFixed(1)})`).join(', ')}</div>` : '';
         }
         
-        function removeIncasso(i) { incassi.splice(i,1); localStorage.setItem('incassiRD', JSON.stringify(incassi)); updateIncassi(); updateDisplay(); }
-        function removeMagazzino(i) { magazzino.splice(i,1); localStorage.setItem('magazzinoRD', JSON.stringify(magazzino)); updateMagazzino(); updateDisplay(); }
-        function removeFattura(i) { fatture.splice(i,1); localStorage.setItem('fattureRD', JSON.stringify(fatture)); updateFatture(); updateDisplay(); }
-        function modificaMagazzino(i) { alert('Modifica: ' + magazzino[i].desc + ' resto ' + magazzino[i].resto + 'kg'); }
-        function modificaFattura(i) { /* Già gestito sopra */ }
+        function editIncasso(i) { alert('Modifica incasso ' + incassi[i].data); }
+        function editMagazzino(i) { alert('Modifica ' + magazzino[i].desc + ' resto: ' + magazzino[i].resto); }
+        function removeIncasso(i) { if(confirm('Elimina?')) { incassi.splice(i,1); localStorage.setItem('incassiRD', JSON.stringify(incassi)); updateIncassi(); updateDisplay(); } }
+        function removeMagazzino(i) { if(confirm('Elimina?')) { magazzino.splice(i,1); localStorage.setItem('magazzinoRD', JSON.stringify(magazzino)); updateMagazzino(); updateDisplay(); } }
+        function removeFattura(i) { if(confirm('Elimina?')) { fatture.splice(i,1); localStorage.setItem('fattureRD', JSON.stringify(fatture)); updateFatture(); updateDisplay(); } }
         
         document.getElementById('dataFattura').value = new Date().toISOString().split('T')[0];
         updateIncassi(); updateMagazzino(); updateFatture(); updateDisplay();
